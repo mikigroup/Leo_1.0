@@ -1,13 +1,19 @@
 <script lang="ts">
+	import Test from "$lib/component/Test.svelte"
 	export let data;
 	let { texts } = data;
 	$: ({ texts } = data);
 </script>
 
 <svelte:head>
-	<title>Objednávkový systém obědů - Šťastné srdce</title>
+	<title>Objednávkový systém obědů - Leo</title>
 	<meta name="description" content="Jednoduché online objednávání obědů" />
 </svelte:head>
+
+
+<Test />
+
+
 
 <section>
 	<div class="max-w-screen-xl p-4 mx-auto sm:px-6 lg:px-8 py-26 lg:mt-10">
@@ -180,6 +186,7 @@
 		</div>
 	</div>
 </section>
+
 
 
 <style lang="postcss">
