@@ -1,0 +1,11 @@
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.vercel
+.output
+package-lock.json
+.env
+# Sentry Config File
+.sentryclirc
