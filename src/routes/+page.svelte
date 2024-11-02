@@ -1,5 +1,9 @@
 <script lang="ts">
 	import Test from "$lib/component/Test.svelte"
+	import Test2 from "$lib/component/Test2.svelte";
+	import Test3 from "$lib/component/Test3.svelte";
+	import Test4 from "$lib/component/Test4.svelte";
+	import Test5 from "$lib/component/Test5.svelte";
 	export let data;
 	let { texts } = data;
 	$: ({ texts } = data);
@@ -10,10 +14,15 @@
 	<meta name="description" content="Jednoduché online objednávání obědů" />
 </svelte:head>
 
+<Test5 />
+
+<Test4 />
+
+<Test3 />
+
+<Test2 />
 
 <Test />
-
-
 
 <section>
 	<div class="max-w-screen-xl p-4 mx-auto sm:px-6 lg:px-8 py-26 lg:mt-10">

@@ -1,9 +1,3 @@
-<script lang="ts">
-	export let data;
-	let { texts } = data;
-	$: ({ texts } = data);
-</script>
-
 <div class="relative min-h-screen bg-slate-50 p-4">
 	<!-- První karta -->
 	<div class="relative z-30 max-w-md ml-8 md:ml-16 mt-20 bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
