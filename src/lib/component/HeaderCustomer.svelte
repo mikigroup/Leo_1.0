@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { page } from "$app/stores";
 	import { totalPiecesStore } from "$lib/stores/store";
 	import { goto } from "$app/navigation";
@@ -56,11 +56,11 @@
 				<div class="grid grid-cols-2 w-80">
 					<h1
 						class="grid items-center text-xl font-semibold animate__flipInX animate__animated animate__delay-2s">
-						<a href="/">Šťastné srdce</a>
+						<a href="/">Název eshopu</a>
 					</h1>
 					<img
 						{src}
-						alt="staste srdce"
+						alt="maly_leo"
 						class="pt-1 animate-pulse"
 						width="20"
 						height="20" />
