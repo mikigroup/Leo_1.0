@@ -1,0 +1,123 @@
+CUSTOMER
+----
+Úvodní stránka (/)
+Responzivní design s použitím Tailwind CSS - Dovolím si oponovat, že mobil je lehce rozsypaný + myslím, že třeba sekce s těmi 4 obrázky by se buď mohla vyjmout nebo upravit.
+Jen pro zajímavost účel zobrazení času? Chápu, že třeba objednávky jsou vždy do pátku nebo něco takového. Co tam přidat i den ve zkratce?
+
+Jídelníček (/jidelnicek)
+Už vidím návaznost na datum - zde bych se tedy nebála info ikony nebo aspoň hover informaci. Nebránila bych se třeba i 5 minut před 17 nějaké modal okno nebo info proužek: Za 5 minut uzavírka objednávke pro následujícíc den
+Líbí se mi jak zůstává podtržený aktivní týden
+v README je napsáno - Přímý přechod do košíku (očekávala bych, že to bude něco ve smyslu, že vložím zboží do košíku a nabídne mi to - Chcete přejít do košíku?)
+Košík - text hůře viditelný
+Obrázek
+Jiří Mika — 25.10.2024 18:12
+Paráda, toho bude kupa.
+Marcy — 25.10.2024 18:13
+Košík (/kosik)
+Možnost úpravy množství a odstranění položek z košíku - Tady jsem se trochu "lekla" když jsem zkoušela množství a najednou na nule to ihned zmizelo. Nejsem si jistá jestli je tohle obvyklé chování. Koukám zrovna na pár e-shopu a buď se to ptá jestli opravdu chcete položku odstranit nebo to nedovolí jít pod 0
+
+Obrázek -  hezký efekt ale nevidím text
+Obrázek
+Jinak něco jsou jen moje spíše osobní/profesní preference rozhodně to není nějaké kritické hodnocení a nutnost to změnit
+Marcy — 25.10.2024 18:20
+Kontakt (/kontakt)
+Mapa asi má být vyšší?
+Otázka načítání mapy na mobilu ano/ne? Už vidím LazyLoading (y) super!
+Mohly by být klikací kontakty
+
+
+Formulář
+Data:
+nevaliduje to úplně e-mail, zvládá to sice @ ale zbytek už ne tedy jde zadat něco jako test@test (bez .cz/com/...)
+Jméno: Zadáno číslo 1 - minimálně bych udělala validaci na délku
+Telefon: Opět není validace aspoň kontrola délky čísla, pokud by se řešila předvolba z programátorského hlediska vidím jako jednodušší mít pole předvoleb a s tím spojený počet číslic. Zákazník si tedy vybere třeba +420 a ty víš, že to má mít 9 číslic, nebo rovnou navázaný regex, protože to může být variabilní.
+Zpráva: Zde jsem napsala <h1>Test<h1>  + nějak text. Zjevně by tam šel podstrčit JS. E-mail se neodeslal, což předpokládám je bu%d chybou v obsahu zprávy, nebo není spuštěn SMTP (já v testovacích taky neměla ostře spuštěný)
+
+
+Administrační rozhraní (/admin)
+Menu: Nedozvěděla jsem se k čemu slouží pole pro Aktivní
+Když jsem přidala alergen v levé části pod Datum -> Aktivní -> Alergen, předpokládám. že mi to přidá nějaký nový alergen, který můžu pak využívat při tvorbě menu - i přes několik pokusů se mi nepodařilo zjistit jak pole Alergeny a Ingredience v levé části fungují
+Chvíli jsem byla zmatená kde je tlačítko na uložit napadlo mě, ukládá se to samo? Já takovou funkcionalitu dělala takže vím, že to jde. Nakonec jsem to našla. Nebála bych se to tlačítko pro Uložit zvýraznit
+Marcy — 26.10.2024 12:33
+Menu přehled - Když mám všechny sloupce myslím, že by si dalo pohrát se šířkou, mám to na NTB tam jako vidět to je, ale myslím, že třeba datum by sneslo i méně místa
+Přijde mi trochu "křiklavá" ta barva při najetí myši na řádek s menu - Je to celkově laděné do takové pastelové, neutrální a najednou na mě vyskočí taková sytá modro-zelená
+Jen když už je dokumentace, říkám si, že by bylo dobré vědět, v čem pole pro hledání vyhledává
+
+
+Poznámka, možná bezpředmětné
+Chybí my filtry typu datum a alergeny. Představa: Zavolá zákazník, že by měl zájem o větší množství jídel pro firmu, potřebuje ale jídla, kde    není lepek. Buď tedy někde vedeš seznam jídel s příznaky ohledně alergenů nebo je tedy filtr, kde máš dvě možnosti buď obsahuje nebo       neobsahuje a vyfiltruješ si. Napadá mě, že vlastně evidence jídel by na tohle byla lepší. V podstatě to funguje tak, že když začneš psát jídlo   tak přes Ajax ti to našeptává. Pokud už jídlo existuje tak pomocí klávesy - většinou TAB se to doplní, pokud ne, samo se pak uloží do seznamu jídel.
+
+Pak právě můžeš mít evidenci jídel a pak tam filtry. Víš, že bude nějaká skupin a je tam člověk co nemůže laktózu. A hned si vyfiltruješ jídla, co to nemají a budeš vědět, co pro ně připravit.
+
+Vím, že tady to funguje na principu že nabízíš menu a lidi vyberte si. Jen myslím do budoucna kdyby byla možnost pro větší množství lidí připravit určitou variantu jídla.
+Konec poznámky
+
+Nicméně filtr pro Datum by v Menu byl užitečný.
+Pokud upravím menu a dám zpět automaticky mě to pustí bez upozornění, že při odchodu o změny přijdu
+Ve formuláři jsou hůře vidět placeholdery
+Marcy — 26.10.2024 12:51
+Objednávky:
+Hover při tlačítku s filtrem data - černé pozadí, černá ikona kalendáře + kalendář se zobrazí jen při kliknutí na ikonu kalendáře, která tedy při hover není moc vidět
+
+Líbí se mi nastavení šířky sloupců při zobrazení všech
+
+Nepřišla jsem na to jak řadit, například automaticky se řadí on nejnovějšího data, obráceně to nejde.
+Číslo objednávky také. Ale tohle je pak o požadavcích klienta (vím, že teď klient není)
+
+Možné další filtry: Stav platby, Měna, Způsob platby, Stav + případně jméno a tam otázkou jestli získat jména všech a použít pak DISTINCT nebo textové pole a buď najde schodu nebo ne. První způsob by měl být rychlejší, protože pak bude vyhledávat podle ID. Jen si nejsem jistá jak je to řešení, jestli objednávka má přiřazené ID klienta, nebo prostě tam je zakaznik_jmeno, zakaznik_prijmeni
+
+Líbí se mi to rozbalování, nevím přes co je dělaný styl jestli flexbox, grid nebo jiné, nicméně některý z nich umí udělat to že výška všech bude podle nejvyššího elementu. Ale bude to asi složitější a těžko říct jestli to bude vypadat lépe. Každý ten box má dvě části, kromě posledního. Šla bych do toho aby první část měla stejnou výšku a pak druhá část také. Případně pošlu obrázek jak to myslím.
+
+Položky objednávky - Nepodařilo se mi zjistit co s tím, kromě toho, že vidím obsah můžu dělat. Mám sice checkbox pro výběr, ale nemám žádnou možnost s tím něco dělat, nebo třeba i jen změnit množství - napadá mě, možná ošetření aby nešla změnit objednávka, která už byla expedovaná. Nicméně si to nemůžu potvrdit, protože tlačítko pro Vytvořit objednávku je zašedlé a já se tedy nedostanu na to abych mohla vytvořit objednávku v budoucnosti. (Nevadí poradila jsem si a tlačítko odblokovala :D)
+
+Formuláře pro adresu nemají validaci formátu
+Obrázek
+Když se mi teda podařilo dostt do vytvoření nové objednávky a vyplnila data do boxů a dala uložit narazila jsem na 404
+Obrázek
+V aplikaci není sjednocení formátů/placeholderů například někde je datum jako DD-MM-YYYY a někde mm/dd/yyyy
+Promiň za spam, asi ti ukazuji nejhorší variantu klienta, na kterou můžeš narazit
+
+
+ADMIN
+Administrační rozhraní (/admin)
+Menu: Nedozvěděla jsem se k čemu slouží pole pro Aktivní
+Když jsem přidala alergen v levé části pod Datum -> Aktivní -> Alergen, předpokládám. že mi to přidá nějaký nový alergen, který můžu pak využívat při tvorbě menu - i přes několik pokusů se mi nepodařilo zjistit jak pole Alergeny a Ingredience v levé části fungují
+Chvíli jsem byla zmatená kde je tlačítko na uložit napadlo mě, ukládá se to samo? Já takovou funkcionalitu dělala takže vím, že to jde. Nakonec jsem to našla. Nebála bych se to tlačítko pro Uložit zvýraznit
+Marcy — 26.10.2024 12:33
+Menu přehled - Když mám všechny sloupce myslím, že by si dalo pohrát se šířkou, mám to na NTB tam jako vidět to je, ale myslím, že třeba datum by sneslo i méně místa
+Přijde mi trochu "křiklavá" ta barva při najetí myši na řádek s menu - Je to celkově laděné do takové pastelové, neutrální a najednou na mě vyskočí taková sytá modro-zelená
+Jen když už je dokumentace, říkám si, že by bylo dobré vědět, v čem pole pro hledání vyhledává
+
+
+Poznámka, možná bezpředmětné
+Chybí my filtry typu datum a alergeny. Představa: Zavolá zákazník, že by měl zájem o větší množství jídel pro firmu, potřebuje ale jídla, kde    není lepek. Buď tedy někde vedeš seznam jídel s příznaky ohledně alergenů nebo je tedy filtr, kde máš dvě možnosti buď obsahuje nebo       neobsahuje a vyfiltruješ si. Napadá mě, že vlastně evidence jídel by na tohle byla lepší. V podstatě to funguje tak, že když začneš psát jídlo   tak přes Ajax ti to našeptává. Pokud už jídlo existuje tak pomocí klávesy - většinou TAB se to doplní, pokud ne, samo se pak uloží do seznamu jídel.
+
+Pak právě můžeš mít evidenci jídel a pak tam filtry. Víš, že bude nějaká skupin a je tam člověk co nemůže laktózu. A hned si vyfiltruješ jídla, co to nemají a budeš vědět, co pro ně připravit.
+
+Vím, že tady to funguje na principu že nabízíš menu a lidi vyberte si. Jen myslím do budoucna kdyby byla možnost pro větší množství lidí připravit určitou variantu jídla.
+Konec poznámky
+
+Nicméně filtr pro Datum by v Menu byl užitečný.
+Pokud upravím menu a dám zpět automaticky mě to pustí bez upozornění, že při odchodu o změny přijdu
+Ve formuláři jsou hůře vidět placeholdery
+Marcy — 26.10.2024 12:51
+Objednávky:
+Hover při tlačítku s filtrem data - černé pozadí, černá ikona kalendáře + kalendář se zobrazí jen při kliknutí na ikonu kalendáře, která tedy při hover není moc vidět
+
+Líbí se mi nastavení šířky sloupců při zobrazení všech
+
+Nepřišla jsem na to jak řadit, například automaticky se řadí on nejnovějšího data, obráceně to nejde.
+Číslo objednávky také. Ale tohle je pak o požadavcích klienta (vím, že teď klient není)
+
+Možné další filtry: Stav platby, Měna, Způsob platby, Stav + případně jméno a tam otázkou jestli získat jména všech a použít pak DISTINCT nebo textové pole a buď najde schodu nebo ne. První způsob by měl být rychlejší, protože pak bude vyhledávat podle ID. Jen si nejsem jistá jak je to řešení, jestli objednávka má přiřazené ID klienta, nebo prostě tam je zakaznik_jmeno, zakaznik_prijmeni
+
+Líbí se mi to rozbalování, nevím přes co je dělaný styl jestli flexbox, grid nebo jiné, nicméně některý z nich umí udělat to že výška všech bude podle nejvyššího elementu. Ale bude to asi složitější a těžko říct jestli to bude vypadat lépe. Každý ten box má dvě části, kromě posledního. Šla bych do toho aby první část měla stejnou výšku a pak druhá část také. Případně pošlu obrázek jak to myslím.
+
+Položky objednávky - Nepodařilo se mi zjistit co s tím, kromě toho, že vidím obsah můžu dělat. Mám sice checkbox pro výběr, ale nemám žádnou možnost s tím něco dělat, nebo třeba i jen změnit množství - napadá mě, možná ošetření aby nešla změnit objednávka, která už byla expedovaná. Nicméně si to nemůžu potvrdit, protože tlačítko pro Vytvořit objednávku je zašedlé a já se tedy nedostanu na to abych mohla vytvořit objednávku v budoucnosti. (Nevadí poradila jsem si a tlačítko odblokovala :D)
+
+Formuláře pro adresu nemají validaci formátu
+Obrázek
+Když se mi teda podařilo dostt do vytvoření nové objednávky a vyplnila data do boxů a dala uložit narazila jsem na 404
+Obrázek
+V aplikaci není sjednocení formátů/placeholderů například někde je datum jako DD-MM-YYYY a někde mm/dd/yyyy
+Promiň za spam, asi ti ukazuji nejhorší variantu klienta, na kterou můžeš narazit
