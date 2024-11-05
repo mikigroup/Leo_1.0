@@ -309,7 +309,7 @@
 				<div
 					class="w-full {column === 'variants' || column === 'soup'
 						? 'md:w-1/4'
-						: 'md:w-1/6 lg:w-1/6 xl:w-1/6'} {index >
+						: 'md:w-1/6 lg:w-1/6 xl:w-1/6'} {index
 					columnOrder.filter((col) => $visibleColumnsStore[col]).length - 1
 						? 'border-r-2'
 						: ''}">
@@ -322,72 +322,52 @@
 		</div>
 		<!-- Nadpis -->
 
-		{#key transitionKey}
-			<div in:fade={{ duration: 300 }} out:fade={{ duration: 300 }}>
-				{#if $navigating || loading}
-					<div transition:fade={{ duration: 300 }} class="loading-overlay">
-						<BarLoader size="120" color="black" unit="px" duration="1s" />
-					</div>
-				{:else if filteredMenus && filteredMenus.length > 0}
-					{#each $table.getRowModel().rows as row, index}
+		{#if filteredMenus && filteredMenus.length > 0}
+			{#each $table.getRowModel().rows as row, index}
+				<div
+					class="w-full gap-4 p-2 px-5 my-1 border border-gray-300 md:flex rounded-xl hover:bg-cyan-700 hover:text-white row {index %
+						2 ===
+					0
+						? 'bg-gray-100'
+						: 'bg-gray-200'}">
+					{#each row.getVisibleCells() as cell}
 						<div
-							in:fly={{ y: 50, duration: 300, delay: index * 50 }}
-							class="w-full gap-4 p-2 px-5 my-1 border border-gray-300 md:flex rounded-xl hover:bg-cyan-700 hover:text-white row {index %
-								2 ===
-							0
-								? 'bg-gray-100'
-								: 'bg-gray-200'}">
-							{#each row.getVisibleCells() as cell}
-								<div
-									class="w-full truncate-cell flex items-center {cell.column
-										.id === 'variants' || cell.column.id === 'soup'
-										? 'md:w-1/4'
-										: cell.column.id === 'edit'
-											? 'md:w-1/6 lg:w-1/6 xl:w-1/6 justify-end'
-											: 'md:w-1/6 lg:w-1/6 xl:w-1/6'}"
-									title={cell.getValue() ?? ""}>
-									{#if cell.column.id === "variants"}
-										{#if Array.isArray(cell.getValue()) && cell.getValue().length > 0}
-											<div class="pl-4">
-												{#each cell
-													.getValue()
-													.sort((a, b) => a.variant_number - b.variant_number) as variant}
-													<div class="mb-1">
-														<span class="font-medium"
-															>{variant.variant_number}.</span>
-														{variant.description}
-													</div>
-												{/each}
+							class="w-full flex items-center {cell.column.id === 'variants' || cell.column.id === 'soup'
+								? 'md:w-1/4'
+								: cell.column.id === 'edit'
+									? 'md:w-1/6 lg:w-1/6 xl:w-1/6 justify-end'
+									: 'md:w-1/6 lg:w-1/6 xl:w-1/6'}"
+							title={cell.getValue() ?? ""}>
+							{#if cell.column.id === "variants"}
+								{#if Array.isArray(cell.getValue()) && cell.getValue().length > 0}
+									<div class="pl-4">
+										{#each cell
+											.getValue()
+											.sort((a, b) => a.variant_number - b.variant_number) as variant}
+											<div class="mb-1">
+												<span class="font-medium">{variant.variant_number}.</span>
+												{variant.description}
 											</div>
-										{:else}
-											<span class="text-gray-400">Žádné varianty</span>
-										{/if}
-									{:else if cell.column.id === "active"}
-										{cell.getValue() ? "Ano" : "Ne"}
-									{:else if cell.column.id === "date"}
-										{formatDateToCzech(cell.getValue())}
-									{:else if cell.column.id === "edit"}
-										{@html cell.getValue()}
-									{:else}
-										{cell.getValue() ?? ""}
-									{/if}
-								</div>
-							{/each}
-							<div
-								class="w-full md:w-1/6 lg:w-1/6 xl:w-1/6 flex items-center justify-end">
-								<a
-									href="/admin/menu/{row.original.id}"
-									data-sveltekit-preload-data
-									class="font-medium hover:underline">
-									Upravit
-								</a>
-							</div>
+										{/each}
+									</div>
+								{:else}
+									<span class="text-gray-400">Žádné varianty</span>
+								{/if}
+							{:else if cell.column.id === "active"}
+								{cell.getValue() ? "Ano" : "Ne"}
+							{:else if cell.column.id === "date"}
+								{formatDateToCzech(cell.getValue())}
+							{:else if cell.column.id === "edit"}
+								{@html cell.getValue()}
+							{:else}
+								{cell.getValue() ?? ""}
+							{/if}
 						</div>
 					{/each}
-				{:else}
-					<p>Žádná menu</p>
-				{/if}
-			</div>
-		{/key}
+				</div>
+			{/each}
+		{:else}
+			<p>Žádná menu</p>
+		{/if}
 	</div>
 </section>
