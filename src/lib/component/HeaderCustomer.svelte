@@ -56,14 +56,14 @@
 				<div class="grid grid-cols-2 w-80">
 					<h1
 						class="grid items-center text-xl font-semibold animate__flipInX animate__animated animate__delay-2s">
-						<a href="/">Název eshopu</a>
+						<a href="/">Malý LEO</a>
 					</h1>
 					<img
 						{src}
 						alt="maly_leo"
-						class="pt-1 animate-pulse"
-						width="20"
-						height="20" />
+						class="pt-1"
+						width="40"
+						height="40" />
 				</div>
 				<!-- čas -->
 				<div class="grid justify-end w-44">

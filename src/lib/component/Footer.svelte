@@ -13,7 +13,7 @@
 			</p>
 		</div>
 		<div class="grid justify-end col-span-3 text-sm">
-			<p>Šťastné srdce 2022-2024 ver_1.05</p>
+			<p>Malý Leo 2022-2024 ver_1.05a</p>
 		</div>
 	</div>
 </footer>

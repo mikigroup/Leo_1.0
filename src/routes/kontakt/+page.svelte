@@ -20,7 +20,7 @@
 	let { session, supabase } = data;
 	$: ({ session, supabase } = data);
 
-	const key = "6Ldvac0ZAAAAAFmtvwilkJ3MOD4IGou9KjhRglIo";
+	const key = ""; //nutno doplnit
 	const State = {
 		idle: "idle",
 		requesting: "requesting",
@@ -84,29 +84,29 @@
 					<div class="flex items-center gap-3 border-b pb-4">
 						<Building2 class="w-6 h-6 text-green-700" />
 						<h2 class="text-2xl font-semibold text-gray-800">
-							Šťastné srdce s.r.o.
+							Vaše firma s.r.o.
 						</h2>
 					</div>
 
 					<div class="space-y-4">
 						<div class="flex items-center gap-3">
 							<MapPin class="w-5 h-5 text-green-700 flex-shrink-0" />
-							<p class="text-gray-600">Potoční 16, Mikulovice 79084</p>
+							<p class="text-gray-600">Masarykovo náměstí 16, Jeseník 79001</p>
 						</div>
 						<div class="flex items-center gap-3">
 							<Globe class="w-5 h-5 text-green-700 flex-shrink-0" />
 							<div>
-								<p class="text-gray-600">IČO: 21300674</p>
-								<p class="text-gray-600">DIČ: CZ21300674</p>
+								<p class="text-gray-600">IČO: 12345678</p>
+								<p class="text-gray-600">DIČ: CZ12345678</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-3">
 							<Phone class="w-5 h-5 text-green-700 flex-shrink-0" />
-							<p class="text-gray-600">724 448 377</p>
+							<p class="text-gray-600">777 111 222</p>
 						</div>
 						<div class="flex items-center gap-3">
 							<MailIcon class="w-5 h-5 text-green-700 flex-shrink-0" />
-							<p class="text-gray-600">stastnesrdcekk@seznam.cz</p>
+							<p class="text-gray-600">info@vasefirma.cz</p>
 						</div>
 						<div class="flex items-center gap-3">
 							<Clock class="w-5 h-5 text-green-700 flex-shrink-0" />
@@ -119,7 +119,7 @@
 				<div class="bg-white rounded-2xl shadow-xl overflow-hidden h-64">
 					<iframe
 						class="w-full h-full"
-						src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2548.593686167967!2d17.32430381590737!3d50.29951200610991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4711eb61ad640179%3A0x480cac0b0efc56ef!2sPoto%C4%8Dn%C3%AD%2016%2C%20790%2084%20Mikulovice!5e0!3m2!1sen!2scz!4v1657788959804!5m2!1sen!2scz"
+						src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2552.348584609527!2d17.202060912513403!3d50.22939237143225!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4711f20709a4a457%3A0x9f2ac966867560dc!2s16%2C%20Masarykovo%20n%C3%A1m.%20167%2F1%2C%20790%2001%20Jesen%C3%ADk%201!5e0!3m2!1scs!2scz!4v1730980176886!5m2!1scs!2scz"
 						loading="lazy"
 						referrerpolicy="no-referrer-when-downgrade"
 						title="Šťastné srdce" />

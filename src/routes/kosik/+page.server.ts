@@ -7,8 +7,8 @@ const transporter = nodemailer.createTransport({
 	port: 465,
 	secure: true,
 	auth: {
-		user: "info@stastnesrdce.cz",
-		pass: "Z95%VQtCFAh8ajxt*ycX"
+		user: "info@malyleo.cz",
+		pass: "c^twq^dU$H^56#8DynKs"
 	}
 });
 
@@ -202,9 +202,9 @@ async function sendOrderConfirmationEmail(
 	note: string
 ) {
 	const mailOptions = {
-		from: '"Šťastné srdce" <info@stastnesrdce.cz>',
+		from: '"Malý Leo" <info@malyleo.cz>',
 		to: email,
-		subject: `Šťastné srdce - Potvrzení objednávky`,
+		subject: `Malý Leo - Potvrzení objednávky`,
 		html: `
 <!DOCTYPE html>
 <html lang="cs">
@@ -319,8 +319,8 @@ async function sendOrderConfirmationEmail(
 
     <div class="footer">
         <p>Šťastné srdce<br>
-        info@stastnesrdce.cz<br>
-        www.stastnesrdce.cz</p>
+        info@malyleo.cz<br>
+        www.malyleo.cz</p>
         <p>Děkujeme za Vaši důvěru!</p>
     </div>
 </body>
