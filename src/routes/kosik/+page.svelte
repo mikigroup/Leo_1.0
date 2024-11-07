@@ -3,6 +3,7 @@
 	import { CartItemsStore, totalPiecesStore } from "$lib/stores/store";
 	import { page } from "$app/stores";
 	import Modal from "./Modal.svelte";
+	import DeleteModal from "./DeleteModal.svelte";
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
 	import { enhance } from "$app/forms";
@@ -13,6 +14,9 @@
 	let { session, supabase } = data;
 	let loading = false;
 	let showModal = false;
+	let showDeleteModal = false;
+	let itemToDelete: { cartItemId: string; variantId: string; description: string } | null = null;
+
 	$: ({ session, supabase } = data);
 
 	// Store subscriptions
@@ -32,6 +36,27 @@
 			)
 		);
 	}, 0);
+
+	function handleQuantityChange(cartItemId: string, variantId: string, quantity: number, description: string) {
+		if (quantity === 0) {
+			itemToDelete = { cartItemId, variantId, description };
+			showDeleteModal = true;
+		} else {
+			CartItemsStore.updateQuantity(cartItemId, variantId, quantity);
+		}
+	}
+
+	function handleRemoveClick(cartItemId: string, variantId: string, description: string) {
+		itemToDelete = { cartItemId, variantId, description };
+		showDeleteModal = true;
+	}
+
+	function confirmDelete() {
+		if (itemToDelete) {
+			CartItemsStore.removeItem(itemToDelete.cartItemId, itemToDelete.variantId);
+			itemToDelete = null;
+		}
+	}
 
 	async function getProfile() {
 		if (!session?.user?.id) return;
@@ -130,16 +155,15 @@
 									<div class="m-5">
 										{#each cartItem.variants as variant}
 											<div class="flex justify-between items-center mb-2">
-												<span class="mr-2">
-													{variant.variant_number}. {truncateText(
-														variant.description,
-														50
-													)}
-												</span>
+                        <span class="mr-2">
+                          {variant.variant_number}. {truncateText(
+													variant.description,
+													50
+												)}
+                        </span>
 												<button
 													class="hover:animate-spin"
-													on:click|preventDefault={() =>
-														CartItemsStore.removeItem(cartItem.id, variant.id)}>
+													on:click|preventDefault={() => handleRemoveClick(cartItem.id, variant.id, variant.description)}>
 													X
 												</button>
 											</div>
@@ -155,12 +179,7 @@
 												max="99"
 												type="number"
 												bind:value={variant.quantity}
-												on:change={() =>
-													CartItemsStore.updateQuantity(
-														cartItem.id,
-														variant.id,
-														variant.quantity
-													)}
+												on:change={() => handleQuantityChange(cartItem.id, variant.id, variant.quantity, variant.description)}
 												class="w-16 text-lg text-center bg-white border rounded-lg focus:outline-none focus:border-green-600" />
 										{/each}
 									</div>
@@ -246,12 +265,7 @@
 														max="99"
 														type="number"
 														bind:value={variant.quantity}
-														on:change={() =>
-															CartItemsStore.updateQuantity(
-																cartItem.id,
-																variant.id,
-																variant.quantity
-															)}
+														on:change={() => handleQuantityChange(cartItem.id, variant.id, variant.quantity, variant.description)}
 														class="w-full text-lg text-center bg-white border rounded-lg focus:outline-none focus:border-green-600" />
 												</div>
 											{/each}
@@ -270,8 +284,7 @@
 											<button
 												type="button"
 												class="hover:animate-spin"
-												on:click|preventDefault={() =>
-													CartItemsStore.removeItem(cartItem.id, variant.id)}>
+												on:click|preventDefault={() => handleRemoveClick(cartItem.id, variant.id, variant.description)}>
 												X
 											</button>
 										{/each}
@@ -346,3 +359,10 @@
 		{/if}
 	</section>
 </main>
+
+<DeleteModal
+	bind:showModal={showDeleteModal}
+	title="Odstranit položku"
+	message={itemToDelete ? `Opravdu chcete odstranit "${truncateText(itemToDelete.description, 50)}" z košíku?` : ''}
+	onConfirm={confirmDelete}
+/>

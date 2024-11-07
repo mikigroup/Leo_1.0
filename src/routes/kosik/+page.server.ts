@@ -12,21 +12,6 @@ const transporter = nodemailer.createTransport({
 	}
 });
 
-interface MenuVariant {
-	id: string;
-	variant_number: string;
-	description: string;
-	price: number;
-	quantity: number;
-}
-
-interface CartItem {
-	id: string;
-	date: string;
-	soup: string;
-	variants: MenuVariant[];
-}
-
 export const actions: Actions = {
 	sendOrder: async ({ request, locals: { supabase, safeGetSession } }) => {
 		const session = await safeGetSession();
