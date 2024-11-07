@@ -51,7 +51,6 @@
 			console.log("Hlavní menu aktualizováno:", updatedMenuData);
 
 			// Aktualizace variant
-			// Aktualizace variant
 			for (const variant of menu.variants) {
 				const { data: updatedVariant, error: variantError } = await supabase
 					.from("menu_variants")
