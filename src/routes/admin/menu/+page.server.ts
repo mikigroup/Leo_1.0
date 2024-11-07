@@ -1,12 +1,13 @@
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
+import { ROUTES_STORE } from "$lib/stores/store";
 
 export const load: PageServerLoad = async ({
 	locals: { supabase, session },
 	url
 }) => {
 	if (!session) {
-		throw redirect(303, "/admin");
+		throw redirect(303, ROUTES_STORE.ADMIN.BASE);
 	}
 
 	const page = parseInt(url.searchParams.get("page") || "1");

@@ -9,6 +9,7 @@
 	import HeaderCustomer from "$lib/component/HeaderCustomer.svelte";
 	import Footer from "$lib/component/Footer.svelte";
 	import { injectSpeedInsights } from "@vercel/speed-insights/sveltekit";
+	import { ROUTES } from "$lib/stores/store";
 
 	export let data;
 	let { supabase, session, user } = data;
@@ -22,7 +23,7 @@
 		});
 		return () => data.subscription.unsubscribe();
 	});
-	$: isAdminRoute = $page.url.pathname.startsWith("/admin");
+	$: isAdminRoute = $page.url.pathname.startsWith($ROUTES.ADMIN.BASE);
 	injectSpeedInsights();
 </script>
 

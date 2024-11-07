@@ -7,6 +7,7 @@
 		getCoreRowModel
 	} from "@tanstack/svelte-table";
 	import type { ColumnDef, TableOptions } from "@tanstack/svelte-table";
+	import { ROUTES } from "$lib/stores/store";
 
 	export let data;
 
@@ -40,7 +41,7 @@
 	let searchInput = searchQuery;
 
 	function newMenuPage() {
-		goto("/admin/menu/newmenu");
+		goto($ROUTES.ADMIN.MENU.NEW);
 	}
 
 	function formatDateToCzech(date: any) {

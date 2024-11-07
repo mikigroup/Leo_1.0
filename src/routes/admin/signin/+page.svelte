@@ -4,6 +4,7 @@
 	import { enhance } from "$app/forms";
 	import type { ActionData } from "./$types";
 	import { onMount } from "svelte";
+	import { ROUTES } from "$lib/stores/store";
 
 	export let form: ActionData;
 	export let data;
@@ -27,7 +28,7 @@
 	if (form?.message?.success) {
 		onMount(() => {
 			setTimeout(() => {
-				goto("/admin");
+				goto($ROUTES.ADMIN.BASE);
 			}, 3000);
 		});
 	}

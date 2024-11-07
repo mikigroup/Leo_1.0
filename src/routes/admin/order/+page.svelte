@@ -7,6 +7,7 @@
 		getCoreRowModel
 	} from "@tanstack/svelte-table";
 	import type { ColumnDef, TableOptions } from "@tanstack/svelte-table";
+	import { ROUTES } from "$lib/stores/store";
 
 	export let data;
 
@@ -40,11 +41,7 @@
 	let searchInput = searchQuery;
 
 	function newOrderPage() {
-		const route = {
-			NEW_ORDER: "/admin/order/neworder"
-		} as const;
-
-		goto(route.NEW_ORDER);
+		goto($ROUTES.ADMIN.ORDER.NEW);
 	}
 
 	function formatDateToCzech(date) {

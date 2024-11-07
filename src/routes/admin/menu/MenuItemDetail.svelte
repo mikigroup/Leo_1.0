@@ -4,6 +4,7 @@
 	import type { Database } from "$lib/database.types";
 	import { createEventDispatcher } from "svelte";
 	import { page } from "$app/stores";
+	import { ROUTES } from "$lib/stores/store";
 
 	// Component props
 	export let menu: Menu;
@@ -14,7 +15,7 @@
 	const dispatch = createEventDispatcher<{ update: Menu }>();
 
 	// Inicializace variant s čísly pokud je nové menu
-	$: if ($page.url.pathname === "/admin/menu/newmenu" && menu.variants) {
+	$: if ($page.url.pathname === $ROUTES.ADMIN.MENU.NEW && menu.variants) {
 		menu.variants = menu.variants.map((variant, index) => ({
 			...variant,
 			variant_number: (index + 1).toString()
