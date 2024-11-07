@@ -29,7 +29,7 @@
                   </svg>
                 </span>
 								<span class="ml-4 text-base font-medium leading-6 text-gray-600">
-                  Objednávejte do 14:00
+									Jednoduchý
                 </span>
 							</div>
 						</li>
@@ -41,7 +41,7 @@
                   </svg>
                 </span>
 								<span class="ml-4 text-base font-medium leading-6 text-gray-600">
-                  Denně čerstvé menu
+                  Moderní
                 </span>
 							</div>
 						</li>
@@ -53,7 +53,7 @@
                   </svg>
                 </span>
 								<span class="ml-4 text-base font-medium leading-6 text-gray-600">
-                  Rozvoz zdarma
+                  Automatizovaný
                 </span>
 							</div>
 						</li>
@@ -65,7 +65,7 @@
                   </svg>
                 </span>
 								<span class="ml-4 text-base font-medium leading-6 text-gray-600">
-                  Online platba
+									Flexibilní
                 </span>
 							</div>
 						</li>
@@ -87,10 +87,10 @@
 			</div>
 </section>
 
-<section class="py-16 bg-gray-50">
+<section class="py-40 argumenty">
 	<div class="max-w-screen-xl px-4 mx-auto sm:px-6 lg:px-8">
 		<div class="text-center">
-			<h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+				<h2 class="text-3xl font-extrabold text-white sm:text-4xl">
 				Jak to funguje?
 			</h2>
 		</div>
@@ -107,8 +107,8 @@
 			</div>
 			<div class="p-6 bg-white rounded-lg shadow-lg">
 				<div class="inline-flex items-center justify-center w-12 h-12 mb-4 text-blue-600 bg-blue-100 rounded-full">3</div>
-				<h3 class="text-lg font-semibold text-gray-900">Zaplaťte online</h3>
-				<p class="mt-2 text-gray-600">Bezpečná platba kartou nebo převodem. Kredit můžete dobíjet.</p>
+				<h3 class="text-lg font-semibold text-gray-900">Potvrďte objednávku</h3>
+				<p class="mt-2 text-gray-600">Odeslání emailové notikace se souhrnem objednávky</p>
 			</div>
 		</div>
 	</div>
@@ -116,10 +116,10 @@
 
 
 <section>
-	<div class="infoKoutek">
-		<div class="mt-20">
+	<div class="infoKoutek py-40">
+		<div class="mt-10">
 			<h2
-				class="mb-4 mb-10 text-4xl font-extrabold tracking-tight text-center text-gray-900 lg:text-5xl">
+				class="mb-10 text-4xl font-extrabold tracking-tight text-center text-gray-900 lg:text-5xl">
 				Info koutek
 			</h2>
 		</div>
@@ -178,6 +178,10 @@
 
 	.infoKoutek {
 		background-color: $cream;
+	}
+
+	.argumenty {
+    background-color: $forest;
 	}
 
 </style>

@@ -1,22 +1,22 @@
 <footer class="flex flex-col justify-center paticka">
-	<div class="flex flex-row w-3/4 mx-auto">
-		<div class="basis-1/2">
+	<div class="flex flex-row md:w-3/4 mx-auto mt-10 lg:w-1/2">
+		<div class="basis-1/2 border-l pl-5">
 			<ul>
-				<li><a href="">GDPR</a></li>
-				<li><a href="">Obchodní podmínky</a></li>
-				<li><a href="">TEST</a></li>
+				<li><a href="/#">GDPR</a></li>
+				<li><a href="/#">Obchodní podmínky</a></li>
+				<li><a href="/#">TEST</a></li>
 			</ul>
 		</div>
-		<div class="basis-1/2">
+		<div class="basis-1/2 justify-end flex pr-5 border-r">
 			<ul>
-			<li><a href="">TEST</a></li>
-			<li><a href="">TEST</a></li>
-			<li><a href="">TEST</a></li>
+			<li><a href="/#">TEST</a></li>
+			<li><a href="/#">TEST</a></li>
+			<li><a href="/#">TEST</a></li>
 			</ul>
 		</div>
 	</div>
 
-	<div class="grid p-4 text-black md:grid-cols-5 mx-auto w-3/4 my-5 border border-white rounded">
+	<div class="grid p-4 text-black md:grid-cols-5 mx-auto w-3/4 my-5 border-b border-t">
 		<div class="grid col-span-2 text-sm">
 			<p>
 				Vytvořeno s
