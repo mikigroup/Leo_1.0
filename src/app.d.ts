@@ -1,8 +1,8 @@
 import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
+import type { Menu, CartItem } from "$lib/types";
 
 declare global {
 	namespace App {
-		// interface Error {}
 		interface Locals {
 			supabase: SupabaseClient;
 			safeGetSession: () => Promise<{
@@ -11,19 +11,18 @@ declare global {
 			}>;
 			session: Session | null;
 			user: User | null;
-			cartItems: any[];
+			cartItems: CartItem[];
 		}
+
 		interface PageData {
 			session: Session | null;
-			// interface Error {}
-			// interface PageState {}
-			// interface Platform {}
+			user: User | null;
+			menus?: Menu[];
+			weeks?: Menu[][];
+			texts?: {
+				text: string;
+				title: string;
+			};
 		}
-		/*interface ImportMetaEnv {
-			VITE_BASE_URL: string;
-			VITE_APP_NAME: string;
-		}*/
 	}
 }
-
-export {};

@@ -9,6 +9,8 @@
 	let selectedWeek = 0;
 	let currentWeekMenus = weeks[0] || [];
 
+	console.log("TEST DAT", data)
+
 	$: totalPieces = $totalPiecesStore;
 
 	function handleWeekSelect(event) {
@@ -46,8 +48,8 @@
 				<MenuWeekSelector {weeks} on:select={handleWeekSelect} />
 
 				<div class="mt-10 border-2 md:mx-10 md:p-5 bg-orange-50">
-					{#if currentWeekMenus.length > 0}
-						{#each currentWeekMenus as menu (menu.id)}
+					{#if currentWeekMenus && currentWeekMenus.length > 0}
+						{#each currentWeekMenus.filter(menu => menu && menu.id) as menu (menu.id)}
 							<MenuItem {menu} />
 						{/each}
 					{:else}

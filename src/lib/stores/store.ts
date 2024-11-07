@@ -1,22 +1,8 @@
 import { readable, writable } from "svelte/store";
 import { ROUTES_STORE } from "$lib/stores/routes";
+import type { Menu, CartItem, CartMenuVariant } from "$lib/types";
 
 export const ROUTES = readable(ROUTES_STORE);
-
-export interface MenuVariant {
-	id: string;
-	variant_number: string;
-	description: string;
-	price: number;
-	quantity: number;
-}
-
-export interface CartItem {
-	id: string;
-	date: string;
-	soup: string;
-	variants: MenuVariant[];
-}
 
 function createCartStore() {
 	const { subscribe, set, update } = writable<CartItem[]>([]);
@@ -24,6 +10,7 @@ function createCartStore() {
 	// Funkce pro řazení podle datumu
 	function sortByDate(items: CartItem[]): CartItem[] {
 		return [...items].sort((a, b) => {
+			if (!a.date || !b.date) return 0;
 			const dateA = new Date(a.date);
 			const dateB = new Date(b.date);
 			return dateA.getTime() - dateB.getTime();
@@ -31,7 +18,7 @@ function createCartStore() {
 	}
 
 	// Funkce pro řazení variant
-	function sortVariants(variants: MenuVariant[]): MenuVariant[] {
+	function sortVariants(variants: CartMenuVariant[]): CartMenuVariant[] {
 		return [...variants].sort((a, b) => {
 			const aNum = parseInt(a.variant_number);
 			const bNum = parseInt(b.variant_number);
@@ -39,14 +26,35 @@ function createCartStore() {
 		});
 	}
 
-	// Načtení a seřazení dat z localStorage při inicializaci
-	if (typeof window !== "undefined") {
-		const stored = localStorage.getItem("cartItems");
-		if (stored) {
-			const items = JSON.parse(stored);
-			set(sortByDate(items));
+	// Funkce pro bezpečné načtení z localStorage
+	function loadFromStorage(): CartItem[] {
+		if (typeof window === "undefined") return [];
+
+		try {
+			const stored = localStorage.getItem("cartItems");
+			if (!stored) return [];
+
+			const items = JSON.parse(stored) as CartItem[];
+			return sortByDate(items);
+		} catch (error) {
+			console.error("Error loading cart from storage:", error);
+			return [];
 		}
 	}
+
+	// Funkce pro bezpečné uložení do localStorage
+	function saveToStorage(items: CartItem[]): void {
+		if (typeof window === "undefined") return;
+
+		try {
+			localStorage.setItem("cartItems", JSON.stringify(items));
+		} catch (error) {
+			console.error("Error saving cart to storage:", error);
+		}
+	}
+
+	// Inicializace store
+	set(loadFromStorage());
 
 	return {
 		subscribe,
@@ -58,40 +66,28 @@ function createCartStore() {
 				if (existingItemIndex !== -1) {
 					// Update existing item
 					item.variants.forEach((newVariant) => {
-						const existingVariantIndex = newItems[
-							existingItemIndex
-						].variants.findIndex((v) => v.id === newVariant.id);
+						const existingVariantIndex = newItems[existingItemIndex].variants.findIndex((v) => v.id === newVariant.id);
 
 						if (existingVariantIndex !== -1) {
-							newItems[existingItemIndex].variants[
-								existingVariantIndex
-							].quantity += 1;
+							newItems[existingItemIndex].variants[existingVariantIndex].quantity += 1;
 						} else {
 							newItems[existingItemIndex].variants.push({
 								...newVariant,
 								quantity: 1
 							});
-							newItems[existingItemIndex].variants = sortVariants(
-								newItems[existingItemIndex].variants
-							);
+							newItems[existingItemIndex].variants = sortVariants(newItems[existingItemIndex].variants);
 						}
 					});
 				} else {
 					// Add new item with sorted variants
 					newItems.push({
 						...item,
-						variants: sortVariants(
-							item.variants.map((v) => ({ ...v, quantity: 1 }))
-						)
+						variants: sortVariants(item.variants.map((v) => ({ ...v, quantity: 1 })))
 					});
 				}
 
-				// Sort by date and save
 				const sortedItems = sortByDate(newItems);
-				if (typeof window !== "undefined") {
-					localStorage.setItem("cartItems", JSON.stringify(sortedItems));
-				}
-
+				saveToStorage(sortedItems);
 				return sortedItems;
 			});
 		},
@@ -113,12 +109,8 @@ function createCartStore() {
 					})
 					.filter((item) => item.variants.some((v) => v.quantity > 0));
 
-				// Sort by date and save
 				const sortedItems = sortByDate(newItems);
-				if (typeof window !== "undefined") {
-					localStorage.setItem("cartItems", JSON.stringify(sortedItems));
-				}
-
+				saveToStorage(sortedItems);
 				return sortedItems;
 			});
 		},
@@ -138,12 +130,8 @@ function createCartStore() {
 					})
 					.filter((item) => item.variants.length > 0);
 
-				// Sort by date and save
 				const sortedItems = sortByDate(newItems);
-				if (typeof window !== "undefined") {
-					localStorage.setItem("cartItems", JSON.stringify(sortedItems));
-				}
-
+				saveToStorage(sortedItems);
 				return sortedItems;
 			});
 		},
@@ -158,16 +146,13 @@ function createCartStore() {
 
 export const CartItemsStore = createCartStore();
 
-// Create totalPiecesStore
 function createTotalPiecesStore() {
-	const { subscribe, set } = writable(0);
+	const { subscribe, set } = writable<number>(0);
 
-	// Initialize total from CartItemsStore
 	CartItemsStore.subscribe(($cart) => {
 		const total = $cart.reduce(
 			(sum, item) =>
-				sum +
-				item.variants.reduce(
+				sum + item.variants.reduce(
 					(variantSum, variant) => variantSum + (variant.quantity || 0),
 					0
 				),
@@ -176,13 +161,8 @@ function createTotalPiecesStore() {
 		set(total);
 	});
 
-	return {
-		subscribe
-	};
+	return { subscribe };
 }
 
 export const totalPiecesStore = createTotalPiecesStore();
-
-
 export { ROUTES_STORE };
-

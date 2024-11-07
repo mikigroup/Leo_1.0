@@ -1,7 +1,3 @@
-
-
-
-// Routes configuration
 export const ROUTES_STORE = {
 	ADMIN: {
 		BASE: "/admin",

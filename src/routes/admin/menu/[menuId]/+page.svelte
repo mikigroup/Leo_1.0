@@ -4,7 +4,8 @@
 	import MenuItemDetail from "../MenuItemDetail.svelte";
 	import type { PageData } from "./$types";
 	import type { Menu } from "$lib/types/menu";
-	import type { Database } from "$lib/database.types";
+	import { ROUTES } from "$lib/stores/store";
+
 
 	export let data: PageData;
 	let { session, supabase, menu, allAllergens, allIngredients } = data;
@@ -105,25 +106,6 @@
 		}
 	}
 
-	/*	async function deleteMenu() {
-		try {
-			loading = true;
-
-			const { data, error } = await supabase
-				.rpc('delete_menu', { p_menu_id: menu.id });
-
-			if (error) throw error;
-
-			updateMessage = "Menu bylo úspěšně smazáno";
-			await goto("/admin/menu", { replaceState: true });
-		} catch (error) {
-			console.error("Error deleting menu:", error);
-			errorMessage = "Chyba při mazání menu";
-		} finally {
-			loading = false;
-		}
-	}*/
-
 	async function softDeleteMenu() {
 		try {
 			loading = true;
@@ -135,7 +117,7 @@
 			if (error) throw error;
 
 			updateMessage = "Menu bylo úspěšně označeno jako smazané";
-			await goto("/admin/menu", { replaceState: true });
+			await goto($ROUTES.ADMIN.MENU.LIST, { replaceState: true });
 		} catch (error) {
 			console.error("Error soft-deleting menu:", error);
 			errorMessage = "Chyba při označování menu jako smazané";
@@ -145,7 +127,7 @@
 	}
 
 	async function back() {
-		await goto("/admin/menu");
+		await goto($ROUTES.ADMIN.MENU.LIST);
 	}
 
 	function handleUpdate(event: CustomEvent<Menu>) {
