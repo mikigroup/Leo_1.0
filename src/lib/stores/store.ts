@@ -184,3 +184,5 @@ function createTotalPiecesStore() {
 export const totalPiecesStore = createTotalPiecesStore();
 
 
+export { ROUTES_STORE };
+
