@@ -3,53 +3,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-	font-family:
-		Arial,
-		-apple-system,
-		BlinkMacSystemFont,
-		"Segoe UI",
-		Roboto,
-		Oxygen,
-		Ubuntu,
-		Cantarell,
-		"Open Sans",
-		"Helvetica Neue",
-		sans-serif;
-	--font-mono: "Fira Mono", monospace;
-}
-
-.footer_fix {
-	padding-bottom: 230px;
-}
-
-.footer_fix2 {
-	padding-bottom: 250px;
-}
-
-a:hover {
-	text-decoration: none;
-}
-
-::placeholder {
-	/* Chrome, Firefox, Opera, Safari 10.1+ */
-	color: rgba(224, 224, 224, 0.952) !important;
-	opacity: 1; /* Firefox */
-}
-
-:-ms-input-placeholder {
-	/* Internet Explorer 10-11 */
-	color: rgba(224, 224, 224, 0.952) !important;
-}
-
-::-ms-input-placeholder {
-	/* Microsoft Edge */
-	color: rgba(224, 224, 224, 0.952) !important;
-}
-
-.colorMenuBg {
-	background-color: #929da5;
-}
-
+/* //colors */
 /*
-#c7c7c7 #c6a28d #7ba197 #474554 #88b3ba #baa997 #75998d #aacfc2 #8685ef #2c8385 #afb1b6 #929da5 #748a90 #587877 #43655a*/
+#FF885B
+#FFE5CF
+#557C56
+#33372C
+*/
+
+

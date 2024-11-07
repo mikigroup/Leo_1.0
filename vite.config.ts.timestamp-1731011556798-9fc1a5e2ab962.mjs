@@ -1,0 +1,21 @@
+// vite.config.ts
+import { sentrySvelteKit } from "file:///C:/Users/miki/Documents/GitHub/Leo_1.0/node_modules/@sentry/sveltekit/build/cjs/index.server.js";
+import { defineConfig } from "file:///C:/Users/miki/Documents/GitHub/Leo_1.0/node_modules/vite/dist/node/index.js";
+import "file:///C:/Users/miki/Documents/GitHub/Leo_1.0/node_modules/@sveltejs/vite-plugin-svelte/src/index.js";
+import { sveltekit } from "file:///C:/Users/miki/Documents/GitHub/Leo_1.0/node_modules/@sveltejs/kit/src/exports/vite/index.js";
+var vite_config_default = defineConfig({
+  plugins: [
+    sentrySvelteKit({
+      sourceMapsUploadOptions: {
+        org: "stastnesrdce",
+        project: "javascript-svelte",
+        authToken: process.env.SENTRY_AUTH_TOKEN
+      }
+    }),
+    sveltekit()
+  ]
+});
+export {
+  vite_config_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsidml0ZS5jb25maWcudHMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9kaXJuYW1lID0gXCJDOlxcXFxVc2Vyc1xcXFxtaWtpXFxcXERvY3VtZW50c1xcXFxHaXRIdWJcXFxcTGVvXzEuMFwiO2NvbnN0IF9fdml0ZV9pbmplY3RlZF9vcmlnaW5hbF9maWxlbmFtZSA9IFwiQzpcXFxcVXNlcnNcXFxcbWlraVxcXFxEb2N1bWVudHNcXFxcR2l0SHViXFxcXExlb18xLjBcXFxcdml0ZS5jb25maWcudHNcIjtjb25zdCBfX3ZpdGVfaW5qZWN0ZWRfb3JpZ2luYWxfaW1wb3J0X21ldGFfdXJsID0gXCJmaWxlOi8vL0M6L1VzZXJzL21pa2kvRG9jdW1lbnRzL0dpdEh1Yi9MZW9fMS4wL3ZpdGUuY29uZmlnLnRzXCI7aW1wb3J0IHsgc2VudHJ5U3ZlbHRlS2l0IH0gZnJvbSBcIkBzZW50cnkvc3ZlbHRla2l0XCI7XG4vKiBpbXBvcnQgeyBzdmVsdGVraXQgfSBmcm9tICdAc3ZlbHRlanMva2l0L3ZpdGUnO1xuaW1wb3J0IHR5cGUgeyBVc2VyQ29uZmlnIH0gZnJvbSAndml0ZSc7XG5cbmNvbnN0IGNvbmZpZzogVXNlckNvbmZpZyA9IHtcblx0cGx1Z2luczogW3N2ZWx0ZWtpdCgpXVxufTtcblxuZXhwb3J0IGRlZmF1bHQgY29uZmlnO1xuICovXG5cbmltcG9ydCB7IGRlZmluZUNvbmZpZyB9IGZyb20gXCJ2aXRlXCI7XG5pbXBvcnQgeyBzdmVsdGUgfSBmcm9tIFwiQHN2ZWx0ZWpzL3ZpdGUtcGx1Z2luLXN2ZWx0ZVwiO1xuaW1wb3J0IHsgc3ZlbHRla2l0IH0gZnJvbSBcIkBzdmVsdGVqcy9raXQvdml0ZVwiO1xuXG5leHBvcnQgZGVmYXVsdCBkZWZpbmVDb25maWcoe1xuXHRwbHVnaW5zOiBbXG5cdFx0c2VudHJ5U3ZlbHRlS2l0KHtcblx0XHRcdHNvdXJjZU1hcHNVcGxvYWRPcHRpb25zOiB7XG5cdFx0XHRcdG9yZzogXCJzdGFzdG5lc3JkY2VcIixcblx0XHRcdFx0cHJvamVjdDogXCJqYXZhc2NyaXB0LXN2ZWx0ZVwiLFxuXHRcdFx0XHRhdXRoVG9rZW46IHByb2Nlc3MuZW52LlNFTlRSWV9BVVRIX1RPS0VOXG5cdFx0XHR9XG5cdFx0fSksXG5cdFx0c3ZlbHRla2l0KClcblx0XVxufSk7XG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQWdULFNBQVMsdUJBQXVCO0FBV2hWLFNBQVMsb0JBQW9CO0FBQzdCLE9BQXVCO0FBQ3ZCLFNBQVMsaUJBQWlCO0FBRTFCLElBQU8sc0JBQVEsYUFBYTtBQUFBLEVBQzNCLFNBQVM7QUFBQSxJQUNSLGdCQUFnQjtBQUFBLE1BQ2YseUJBQXlCO0FBQUEsUUFDeEIsS0FBSztBQUFBLFFBQ0wsU0FBUztBQUFBLFFBQ1QsV0FBVyxRQUFRLElBQUk7QUFBQSxNQUN4QjtBQUFBLElBQ0QsQ0FBQztBQUFBLElBQ0QsVUFBVTtBQUFBLEVBQ1g7QUFDRCxDQUFDOyIsCiAgIm5hbWVzIjogW10KfQo=

@@ -1,9 +1,4 @@
 <script lang="ts">
-	import Test from "$lib/component/Test.svelte"
-	import Test2 from "$lib/component/Test2.svelte";
-	import Test3 from "$lib/component/Test3.svelte";
-	import Test4 from "$lib/component/Test4.svelte";
-	import Test5 from "$lib/component/Test5.svelte";
 	export let data;
 	let { texts } = data;
 	$: ({ texts } = data);
@@ -14,21 +9,11 @@
 	<meta name="description" content="Jednoduché online objednávání obědů" />
 </svelte:head>
 
-<Test5 />
-
-<Test4 />
-
-<Test3 />
-
-<Test2 />
-
-<Test />
-
 <section>
 	<div class="max-w-screen-xl p-4 mx-auto sm:px-6 lg:px-8 py-26 lg:mt-10">
 		<div class="">
 			<div class="lg:grid lg:grid-flow-row-dense lg:grid-cols-2 lg:gap-8 lg:items-center">
-				<div class="px-10 py-10 ml-auto bg-white rounded-md shadow-lg lg:col-start-2 lg:max-w-2xl">
+				<div class="px-10 py-10 ml-auto bg-white rounded-md border shadow-md lg:col-start-2 lg:max-w-2xl">
 					<h2 class="mt-2 text-3xl font-extrabold leading-8 text-slate-700 lg:text-4xl sm:leading-9">
 						Obědy podle vašich představ
 					</h2>
@@ -94,22 +79,12 @@
 						</a>
 					</div>
 				</div>
-				<div class="relative mt-10 lg:-mx-4 relative-20 lg:mt-0 lg:col-start-1">
-					<div class="relative space-y-4">
-						<div class="flex items-end justify-center space-x-4 lg:justify-start">
-							<img class="w-32 rounded-lg shadow-lg md:w-56 floating-img" width="200" src="meal_01.jpg" alt="Oběd 1" />
-							<img class="w-40 rounded-lg shadow-lg md:w-64 floating-img2" width="260" src="meal_02.webp"
-									 alt="Oběd 2" />
-						</div>
-						<div class="flex items-start justify-center ml-12 space-x-4 lg:justify-start">
-							<img class="w-24 rounded-lg shadow-lg md:w-40 floating-img2" width="170" src="meal_03.avif" alt="Oběd 3" />
-							<img class="w-32 rounded-lg shadow-lg md:w-56 floating-img" width="200" src="meal_04.jpg" alt="Oběd 4" />
+				<div class="">
+							<img class="rounded-lg" src="meal01.avif" alt="Oběd 1" />
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-	</div>
 </section>
 
 <section class="py-16 bg-gray-50">
@@ -141,7 +116,7 @@
 
 
 <section>
-	<div class="">
+	<div class="infoKoutek">
 		<div class="mt-20">
 			<h2
 				class="mb-4 mb-10 text-4xl font-extrabold tracking-tight text-center text-gray-900 lg:text-5xl">
@@ -198,33 +173,11 @@
 
 
 
-<style lang="postcss">
-    .floating-img {
-        transform: translateY(0%);
-        transition: ease 0.5s;
-    }
-    .floating-img2 {
-        transform: translateX(0%);
-        transition: ease 0.5s;
-    }
-    @keyframes floater-y {
-        0% {
-            transform: translateY(-10%);
-            transition: ease 0.5s;
-        }
-        50% {
-            transform: translateY(10%);
-            transition: ease 0.5s;
-        }
-    }
-    @keyframes floater-x {
-        0% {
-            transform: translateX(-10%);
-            transition: ease 0.5s;
-        }
-        50% {
-            transform: translateX(10%);
-            transition: ease 0.5s;
-        }
-    }
+<style lang="scss">
+	@import "$lib/styles/_variables.scss";
+
+	.infoKoutek {
+		background-color: $cream;
+	}
+
 </style>
