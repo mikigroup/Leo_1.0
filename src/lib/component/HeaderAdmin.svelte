@@ -121,7 +121,7 @@
 			<p class="text-xl">Malý LEO</p>
 		</div>
 		<div class="navbar-center">
-			<div class="flex justify-center w-1/4 m-5 text-md xl:text-lg">
+			<div class="flex justify-center w-1/3 m-5 text-md xl:text-lg">
 				{#if $page.data.session}
 					{#await getProfile()}
 						<p>...</p>
