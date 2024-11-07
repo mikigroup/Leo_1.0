@@ -309,8 +309,8 @@
 				<div
 					class="w-full {column === 'variants' || column === 'soup'
 						? 'md:w-1/4'
-						: 'md:w-1/6 lg:w-1/6 xl:w-1/6'} {index
-					columnOrder.filter((col) => $visibleColumnsStore[col]).length - 1
+						: 'md:w-1/6 lg:w-1/6 xl:w-1/6'}
+						{index === columnOrder.filter((col) => $visibleColumnsStore[col]).length - 1
 						? 'border-r-2'
 						: ''}">
 					{columnNames[column]}
