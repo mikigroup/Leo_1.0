@@ -44,41 +44,11 @@
 	<slot class="mt-10 container mx-auto" />
 </main>
 
-<GDPR cookieName="gdpr" />
+<!--<GDPR cookieName="gdpr" />   NUTNO ZAPNOUT PRI OSTREM PROVOZU-->
 <!-- <GdprBanner bind:this={gdprBanner} cookieName="props.beyonk_gdpr" {...props} on:analytics={initAnalytics} /> -->
 
 <Footer />
 
 <style lang="scss">
-	.textmenu {
-		font-size: 1em;
-	}
-	header {
-		position: fixed;
-		top: 0px;
-		width: 100%;
-		height: 100px;
-		z-index: 1;
-	}
-	.navItem {
-		text-decoration: none;
-		position: relative;
-		display: inline-block;
 
-		&::after {
-			content: "";
-			background: #d2691e;
-			height: 1px;
-			position: absolute;
-			bottom: 0;
-			transition: 0.16s all 0.025s;
-			left: 100%;
-			right: 0;
-		}
-
-		&:hover::after {
-			left: 0;
-			right: 0;
-		}
-	}
 </style>

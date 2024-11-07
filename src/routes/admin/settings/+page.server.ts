@@ -1,4 +1,4 @@
-import { fail, redirect } from "@sveltejs/kit";
+import { fail } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 
 export type ProfileData = {
@@ -9,18 +9,10 @@ export type ProfileData = {
 	telephone: string;
 };
 
-/*export type RezcalendarData = {
-	id: number;
-	note: string;
-	date: string;
-	time: string;
-	user_id: string;
-};*/
 
 export type LoadData = {
 	session: any;
 	profiles: ProfileData;
-	// rezcalendar: RezcalendarData[];
 };
 
 export const load: PageServerLoad = async ({
@@ -32,14 +24,6 @@ export const load: PageServerLoad = async ({
 		.eq("id", session?.user.id)
 		.single();
 
-	/*  const { data: rezcalendar, error: rezcalendarError } = await supabase
-    .from("rezcalendar")
-    .select(`id, note, date, time, user_id`);
-
-  if (profilesError || rezcalendarError) {
-    console.error("Error fetching profiles or rezcalendar:", profilesError || rezcalendarError);
-    throw profilesError || rezcalendarError;
-  }*/
 	if (!profiles) {
 		throw new Error("Profil nenalezen.");
 	}
