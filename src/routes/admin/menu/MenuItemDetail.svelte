@@ -2,6 +2,7 @@
 	import TagSelector from "./TagSelector.svelte";
 	import type { Menu } from "$lib/types/menu";
 	import type { Database } from "$lib/database.types";
+	import type { TagUpdateEvent } from "$lib/types/tag";
 	import { createEventDispatcher } from "svelte";
 	import { page } from "$app/stores";
 	import { ROUTES } from "$lib/stores/store";
@@ -29,40 +30,49 @@
 	}
 
 	// Update allergens for the main menu
-	function updateAllergens(
-		allergens: Database["public"]["Tables"]["allergens"]["Row"][]
-	) {
-		console.log("function updateAllergens called with:", allergens);
-		menu = { ...menu, allergens }; // Create a new object to trigger reactivity
+	function handleAllergensUpdate(event: CustomEvent<TagUpdateEvent>) {
+		console.log("handleAllergensUpdate called with:", event.detail);
+		menu = {
+			...menu,
+			allergens: event.detail.tags
+		};
 		console.log("menu after allergens update:", menu);
-		dispatch("update", menu); // Dispatch immediately after update
 	}
 
 	// Update ingredients for the main menu
-	function updateIngredients(
-		ingredients: Database["public"]["Tables"]["ingredients"]["Row"][]
-	) {
-		console.log("function updateIngredients called with:", ingredients);
-		menu = { ...menu, ingredients }; // Create a new object to trigger reactivity
+	function handleIngredientsUpdate(event: CustomEvent<TagUpdateEvent>) {
+		console.log("handleIngredientsUpdate called with:", event.detail);
+		menu = {
+			...menu,
+			ingredients: event.detail.tags
+		};
 		console.log("menu after ingredients update:", menu);
-		dispatch("update", menu); // Dispatch immediately after update
 	}
 
 	// Update allergens for a specific menu variant
-	function updateVariantAllergens(
-		variantIndex: number,
-		allergens: Database["public"]["Tables"]["allergens"]["Row"][]
-	) {
-		menu.variants[variantIndex].allergens = allergens;
-		dispatch("update", menu);
+	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>) {
+		const updatedVariants = [...menu.variants];
+		updatedVariants[variantIndex] = {
+			...updatedVariants[variantIndex],
+			allergens: event.detail.tags
+		};
+		menu = {
+			...menu,
+			variants: updatedVariants
+		};
 	}
 
 	// Update ingredients for a specific menu variant
-	function updateVariantIngredients(
-		variantIndex: number,
-		ingredients: Database["public"]["Tables"]["ingredients"]["Row"][]
-	) {
-		menu.variants[variantIndex].ingredients = ingredients;
+	function handleVariantIngredientsUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>) {
+		const updatedVariants = [...menu.variants];
+		updatedVariants[variantIndex] = {
+			...updatedVariants[variantIndex],
+			ingredients: event.detail.tags
+		};
+		menu = {
+			...menu,
+			variants: updatedVariants
+		};
 	}
 </script>
 
@@ -75,14 +85,15 @@
 			<input
 				type="date"
 				class="input input-bordered w-full"
-				bind:value={menu.date} />
+				bind:value={menu.date}
+			/>
 		</div>
 
 		<div class="form-control w-full mb-2">
 			<label class="label">
 				<span class="label-text">Aktivní</span>
 			</label>
-			<select class="select select-bordered w-full" bind:value={menu.active}>
+			<select class="select select-bordered w-full boolen" bind:value={menu.active}>
 				<option value={false}>NE</option>
 				<option value={true}>Ano</option>
 			</select>
@@ -95,18 +106,21 @@
 			<TagSelector
 				selectedTags={menu.allergens}
 				availableTags={allAllergens}
-				on:update={(event) => updateAllergens(event.detail)} />
+				type="allergen"
+				on:update={handleAllergensUpdate}
+			/>
 		</div>
 
 		<div class="form-control w-full mb-2">
 			<label class="label">
 				<span class="label-text">Ingredience</span>
 			</label>
-
 			<TagSelector
 				selectedTags={menu.ingredients}
 				availableTags={allIngredients}
-				on:update={(event) => updateIngredients(event.detail)} />
+				type="ingredient"
+				on:update={handleIngredientsUpdate}
+			/>
 		</div>
 	</div>
 
@@ -118,7 +132,8 @@
 			<input
 				type="text"
 				class="input input-bordered w-full"
-				bind:value={menu.soup} />
+				bind:value={menu.soup}
+			/>
 		</div>
 
 		<div class="form-control w-full mb-2 border rounded-xl mt-5">
@@ -127,17 +142,16 @@
 			</label>
 			<div class="grid grid-rows-3 gap-2">
 				{#each menu.variants as variant, index}
-					<div
-						class="variant-container mb-10 border rounded-xl p-5 border-gray-400 bg-neutral-100">
-						<div
-							class="rounded-2xl border w-3 px-4 py-1 flex justify-center bg-white mb-2">
+					<div class="variant-container mb-10 border rounded-xl p-5 border-gray-400 bg-neutral-100">
+						<div class="rounded-2xl border w-3 px-4 py-1 flex justify-center bg-white mb-2">
 							{variant.variant_number}
 						</div>
 						<textarea
 							class="textarea textarea-bordered w-full"
 							placeholder={`Menu ${index + 1}`}
 							rows="4"
-							bind:value={variant.description}></textarea>
+							bind:value={variant.description}
+						></textarea>
 						<div class="mt-2">
 							<label class="label">
 								<span class="label-text">Cena varianty</span>
@@ -145,7 +159,8 @@
 							<input
 								type="number"
 								class="input input-bordered w-full"
-								bind:value={variant.price} />
+								bind:value={variant.price}
+							/>
 						</div>
 						<div class="flex-row flex">
 							<div class="mt-2 w-full">
@@ -155,17 +170,19 @@
 								<TagSelector
 									selectedTags={variant.allergens}
 									availableTags={allAllergens}
-									on:update={(event) =>
-										updateVariantAllergens(index, event.detail)} />
+									type="allergen"
+									on:update={(event) => handleVariantAllergensUpdate(index, event)}
+								/>
 								<div class="mt-2 w-full">
 									<label class="label">
 										<span class="label-text">Ingredience varianty</span>
 									</label>
-									<!--		<TagSelector
-									selectedTags={variant.ingredients}
-									availableTags={allIngredients}
-									on:update={(ingredients) => updateVariantIngredients(index, ingredients)}
-								/>-->
+									<TagSelector
+										selectedTags={variant.ingredients}
+										availableTags={allIngredients}
+										type="ingredient"
+										on:update={(event) => handleVariantIngredientsUpdate(index, event)}
+									/>
 								</div>
 							</div>
 						</div>
@@ -179,7 +196,10 @@
 		<label class="label">
 			<span class="label-text">Poznámky</span>
 		</label>
-		<textarea class="textarea textarea-bordered"></textarea>
+		<textarea
+			class="textarea textarea-bordered"
+			bind:value={menu.notes}
+		></textarea>
 	</div>
 </div>
 
@@ -188,19 +208,27 @@
 		<label class="label">
 			<span class="label-text">Nutriční info</span>
 		</label>
-		<input type="text" class="input input-bordered w-full" />
+		<input
+			type="text"
+			class="input input-bordered w-full"
+			bind:value={menu.nutri}
+		/>
 	</div>
 	<div class="form-control w-full mb-2">
 		<label class="label">
 			<span class="label-text">Typ</span>
 		</label>
-		<input type="text" class="input input-bordered w-full" />
+		<input
+			type="text"
+			class="input input-bordered w-full"
+			bind:value={menu.type}
+		/>
 	</div>
 </div>
 
 <style>
-	input {
-		border: solid 1px;
-		border-radius: 20px;
-	}
+    input, textarea, .boolen {
+        border: solid 1px;
+        border-radius: 15px;
+    }
 </style>
