@@ -3,9 +3,9 @@ import type { PageServerLoad } from "./$types";
 import { ROUTES_STORE } from "$lib/stores/store";
 
 export const load: PageServerLoad = async ({
-	locals: { supabase, session },
-	url
-}) => {
+																						 locals: { supabase, session },
+																						 url
+																					 }) => {
 	if (!session) {
 		throw redirect(303, ROUTES_STORE.ADMIN.BASE);
 	}
@@ -13,21 +13,31 @@ export const load: PageServerLoad = async ({
 	const page = parseInt(url.searchParams.get("page") || "1");
 	const itemsPerPage = 10;
 	const searchQuery = url.searchParams.get("search") || "";
+	const filterDate = url.searchParams.get("date") || "";
+	const filterActive = url.searchParams.get("active") || "";
 
 	// Základní query bez range omezení pro vyhledávání
 	let query = supabase
 		.from("menus")
 		.select(
-			`
-      *,
-      variants:menu_variants(id, description, variant_number)
-    `,
+			`*,
+       variants:menu_variants(id, description, variant_number)`,
 			{
 				count: "exact"
 			}
 		)
 		.order("date", { ascending: false })
 		.eq("deleted", false);
+
+	// Aplikace datumového filtru
+	if (filterDate) {
+		query = query.eq("date", filterDate);
+	}
+
+	// Aplikace filtru aktivity
+	if (filterActive) {
+		query = query.eq("active", filterActive === "true");
+	}
 
 	// Vyhledávání v celé DB
 	if (searchQuery) {
@@ -87,6 +97,8 @@ export const load: PageServerLoad = async ({
 		totalItems,
 		itemsOnCurrentPage,
 		itemsPerPage,
-		searchQuery
+		searchQuery,
+		filterDate,
+		filterActive
 	};
 };

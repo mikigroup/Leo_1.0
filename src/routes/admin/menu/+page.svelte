@@ -110,11 +110,18 @@
 
 	visibleColumnsStore.subscribe(saveTableSettings);
 
-	$: filteredMenus = menus?.filter((menu) =>
-		Object.values(menu).some((value) =>
+	// Vylepšená funkce pro filtrování menu
+	$: filteredMenus = menus?.filter((menu) => {
+		const matchesSearch = Object.values(menu).some((value) =>
 			value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-		)
-	);
+		);
+
+		const matchesDate = !filterDate || menu.date === filterDate;
+
+		const matchesActive = !filterActive || menu.active.toString() === filterActive;
+
+		return matchesSearch && matchesDate && matchesActive;
+	});
 
 	$: columns = columnOrder
 		.filter((key) => $visibleColumnsStore[key])
@@ -158,10 +165,24 @@
 		}
 	}
 
+	// Upravená funkce pro vyhledávání, která zahrnuje i datum a stav aktivity
 	async function handleSearch() {
 		loading = true;
 		try {
-			await goto(`?search=${searchInput}&page=1`);
+			const searchParams = new URLSearchParams();
+
+			if (searchInput) {
+				searchParams.set('search', searchInput);
+			}
+			if (filterDate) {
+				searchParams.set('date', filterDate);
+			}
+			if (filterActive) {
+				searchParams.set('active', filterActive);
+			}
+			searchParams.set('page', '1');
+
+			await goto(`?${searchParams.toString()}`);
 		} catch (error) {
 			console.error("Chyba při vyhledávání:", error);
 		} finally {
