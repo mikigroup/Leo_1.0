@@ -2,75 +2,43 @@
 	import { goto } from "$app/navigation";
 	import { fade, fly } from "svelte/transition";
 	import MenuItemDetail from "../MenuItemDetail.svelte";
-	import type { PageData } from "./$types";
-	import type { Menu } from "$lib/types/menu";
+	import VersionTimeline from "./VersionTimeline.svelte";
+	import type { Menu } from "$lib/types";
 	import { ROUTES } from "$lib/stores/store";
 
+	export let data;
+	let { menu, allAllergens, allIngredients } = data;
 
-	export let data: PageData;
-	let { session, supabase, menu, allAllergens, allIngredients } = data;
-	$: ({ session, supabase, menu, allAllergens, allIngredients } = data);
+	let selectedVersion = menu.currentVersion;
+	let showVersionHistory = false;
 
-	//console.log("Zde je page.svelte:", menu)
+	// Funkce pro přepnutí verze
+	async function switchVersion(version: any) {
+		const searchParams = new URLSearchParams(window.location.search);
+		searchParams.set('date', version.valid_from);
+		await goto(`?${searchParams.toString()}`);
+	}
 
-	let loading = false;
-	let updateMessage = "";
-	let errorMessage = "";
-
-	/*function handleChange(event: CustomEvent<Menu>) {
-		editedMenu = event.detail;
-		console.log("Aktualizované menu:", editedMenu);
-	}*/
-
+	// Upravená funkce pro update
 	async function updateMenu() {
 		try {
 			loading = true;
 			errorMessage = "";
 			updateMessage = "";
 
-			console.log("Začátek aktualizace menu:", menu);
+			// Vytvoření nové verze menu
+			const { data: newVersion, error: versionError } = await supabase
+				.rpc('create_menu_version', {
+					p_menu_id: menu.id,
+					p_date: menu.date,
+					p_soup: menu.soup,
+					p_active: menu.active,
+					p_notes: menu.notes,
+					p_type: menu.type,
+					p_nutri: menu.nutri
+				});
 
-			// Aktualizace hlavního menu
-			const { data: updatedMenuData, error: menuError } = await supabase
-				.from("menus")
-				.update({
-					date: menu.date,
-					soup: menu.soup,
-					active: menu.active,
-					notes: menu.notes,
-					type: menu.type,
-					nutri: menu.nutri
-				})
-				.eq("id", menu.id)
-				.select();
-
-			if (menuError) {
-				console.error("Chyba při aktualizaci hlavního menu:", menuError);
-				throw menuError;
-			}
-
-			console.log("Hlavní menu aktualizováno:", updatedMenuData);
-
-			// Aktualizace variant
-			for (const variant of menu.variants) {
-				const { data: updatedVariant, error: variantError } = await supabase
-					.from("menu_variants")
-					.upsert(
-						{
-							menu_id: menu.id,
-							id: variant.id,
-							variant_number: variant.variant_number,
-							description: variant.description,
-							price: variant.price
-						},
-						{
-							onConflict: "id"
-						}
-					)
-					.select()
-					.single();
-
-				if (variantError) throw variantError;
+			if (versionError) throw versionError;
 
 				// Aktualizace alergenů varianty
 				await supabase
@@ -97,13 +65,14 @@
 				}
 			}
 
-			updateMessage = "Menu upraveno!";
-		} catch (error) {
-			console.error("Chyba při aktualizaci menu:", error);
-			errorMessage = "Chyba při úpravě menu";
-		} finally {
-			loading = false;
-		}
+		updateMessage = "Menu bylo upraveno a vytvořena nová verze!";
+		await goto($ROUTES.ADMIN.MENU.LIST);
+	} catch (error) {
+		console.error("Chyba při aktualizaci menu:", error);
+		errorMessage = "Chyba při úpravě menu";
+	} finally {
+		loading = false;
+	}
 	}
 
 	async function softDeleteMenu() {
@@ -137,42 +106,56 @@
 	}
 </script>
 
-<div
-	class="relative p-5 overflow-x-auto shadow-md sm:rounded-lg border border-zinc-200"
-	in:fly={{ y: 50, duration: 500 }}>
+<div class="relative p-5 overflow-x-auto shadow-md sm:rounded-lg border border-zinc-200"
+		 in:fly={{ y: 50, duration: 500 }}>
+
+	<!-- Základní ovládací prvky -->
 	<div class="flex justify-between items-center mb-4">
 		<button on:click={back} class="btn btn-outline">Zpět</button>
-		{#if updateMessage}
-			<div transition:fade class="bg-green-200 text-green-800 rounded p-2">
-				<span>{updateMessage}</span>
-			</div>
-		{/if}
-		{#if errorMessage}
-			<div transition:fade class="bg-red-200 text-red-800 rounded p-2">
-				<span>{errorMessage}</span>
-			</div>
-		{/if}
+
+		<!-- Přidán přepínač historie -->
+		<button
+			class="btn btn-outline"
+			on:click={() => showVersionHistory = !showVersionHistory}>
+			{showVersionHistory ? 'Skrýt historii' : 'Zobrazit historii'}
+		</button>
+
 		<div class="flex flex-col gap-2 md:flex-row">
 			<button disabled={loading} on:click={updateMenu} class="btn btn-outline">
-				{loading ? "Ukládá se..." : "Uložit změny"}
+				{loading ? "Ukládá se..." : "Uložit jako novou verzi"}
 			</button>
-			<button
-				class="btn btn-outline btn-error"
-				disabled={loading}
-				on:click={softDeleteMenu}>
+			<button class="btn btn-outline btn-error"
+							disabled={loading}
+							on:click={softDeleteMenu}>
 				{loading ? "Maže se..." : "Smazat menu"}
 			</button>
 		</div>
 	</div>
-	<div class="divider"></div>
 
+	<!-- Timeline s verzemi -->
+	{#if showVersionHistory}
+		<div class="mb-6" transition:fade>
+			<VersionTimeline
+				versions={menu.allVersions}
+				selectedVersion={menu.currentVersion}
+				on:select={(e) => switchVersion(e.detail)}
+			/>
+		</div>
+	{/if}
+
+	<!-- Formulář pro editaci -->
 	<div class="rounded-xl p-4 md:p-10 bg-neutral-200">
-		<h2 class="text-2xl font-bold mb-6">Upravit Menu</h2>
+		<h2 class="text-2xl font-bold mb-6">
+			{menu.currentVersion ?
+				`Úprava menu - verze z ${new Date(menu.currentVersion.valid_from).toLocaleDateString()}` :
+				'Úprava menu'}
+		</h2>
 		<MenuItemDetail
 			bind:menu
 			{allAllergens}
 			{allIngredients}
-			on:update={handleUpdate} />
+			on:update={handleUpdate}
+		/>
 	</div>
 </div>
 

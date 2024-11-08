@@ -1,3 +1,29 @@
+import type { PageServerLoad } from "./$types";
+import { error } from "@sveltejs/kit";
+
+interface MenuVariant {
+	id: string;
+	variant_number: string;
+	description: string;
+	price: number | null;
+}
+interface Menu {
+	id: string;
+	date: string | null;
+	soup: string | null;
+	active: boolean | null;
+	notes: string | null;
+	type: string | null;
+	nutri: string | null;
+	variants: MenuVariant[];
+}
+interface Text {
+	id: number;
+	title: string | null;
+	text: string | null;
+	page: string | null;
+}
+
 export const load: PageServerLoad = async ({ locals: { supabase } }) => {
 	try {
 		// Nastavení fixního data pro test

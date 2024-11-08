@@ -1,111 +1,55 @@
+// src/routes/admin/menu/[menuId]/+page.server.ts
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
-import type { Database } from "$lib/database.types";
 
-type Menu = Database["public"]["Tables"]["menus"]["Row"] & {
-	variants: (Database["public"]["Tables"]["menu_variants"]["Row"] & {
-		allergens: Database["public"]["Tables"]["allergens"]["Row"][];
-		ingredients: Database["public"]["Tables"]["ingredients"]["Row"][];
-	})[];
-	allergens: Database["public"]["Tables"]["allergens"]["Row"][];
-	ingredients: Database["public"]["Tables"]["ingredients"]["Row"][];
-};
-
-export const load: PageServerLoad = async ({
-	params,
-	locals: { supabase }
-}) => {
+export const load: PageServerLoad = async ({ params, locals: { supabase }, url }) => {
 	const { menuId } = params;
+	const date = url.searchParams.get('date');
 
 	try {
-		// Načtení menu s variantami, allergeny a ingrediencemi
-		// Load menu with variants, allergens and ingredients
+		// 1. Načtení aktuální nebo historické verze menu
+		const { data: menuVersion, error: versionError } = await supabase
+			.rpc('get_menu_version_at_date', {
+				p_menu_id: menuId,
+				p_date: date || 'now'
+			});
+
+		if (versionError) throw error(404, "Menu version not found");
+
+		// 2. Načtení detailů menu včetně variant, alergenů a ingrediencí
 		const { data: menu, error: menuError } = await supabase
 			.from("menus")
-			.select(
-				`
+			.select(`
         *,
         variants:menu_variants(
           *,
           allergens:variant_allergens(allergen:allergens(*)),
           ingredients:variant_ingredients(ingredient:ingredients(*))
-        )
-      `
-			)
+        ),
+        versions:menu_versions(*)
+      `)
 			.eq("id", menuId)
-			.order("variant_number", { referencedTable: "menu_variants" })
 			.single();
 
-		if (menuError) {
-			throw error(404, "Menu not found");
-		}
+		if (menuError) throw error(404, "Menu not found");
 
-		// Načtení všech alergenů z DB (statické)
-		// Load all allergens from DB (static)
-		const { data: allergens, error: allergensError } = await supabase
-			.from("allergens")
-			.select("*");
+		// 3. Načtení všech verzí pro timeline
+		const { data: versions, error: versionsError } = await supabase
+			.from("menu_versions")
+			.select("*")
+			.eq("menu_id", menuId)
+			.order("valid_from", { ascending: false });
 
-		if (allergensError) {
-			console.error("Error fetching allergens:", allergensError);
-			throw error(500, "Failed to load allergens");
-		}
-
-		// Načtení všech ingrediencí
-		// Load all ingredients
-		const { data: ingredients, error: ingredientsError } = await supabase
-			.from("ingredients")
-			.select("*");
-
-		if (ingredientsError) {
-			console.error("Error fetching ingredients:", ingredientsError);
-			throw error(500, "Failed to load ingredients");
-		}
-
-		// Načtení alergenů pro menu
-		// Load allergens for menu item
-		const { data: menuAllergens, error: menuAllergensError } = await supabase
-			.from("menu_allergens")
-			.select("allergen:allergens(*)")
-			.eq("menu_id", menuId);
-
-		if (menuAllergensError) {
-			console.error("Error fetching menu allergens:", menuAllergensError);
-			throw error(500, "Failed to load menu allergens");
-		}
-
-		// Načtení ingrediencí pro menu
-		// Load all ingredients for menu item
-		const { data: menuIngredients, error: menuIngredientsError } =
-			await supabase
-				.from("menu_ingredients")
-				.select("ingredient:ingredients(*)")
-				.eq("menu_id", menuId);
-
-		if (menuIngredientsError) {
-			console.error("Error fetching menu ingredients:", menuIngredientsError);
-			throw error(500, "Failed to load menu ingredients");
-		}
-
-		// Přidání alergenů a ingrediencí k menu
-		// Add alergens and ingredients to the menu
-		const fullMenu: Menu = {
-			...menu,
-			allergens: menuAllergens.map((ma) => ma.allergen),
-			ingredients: menuIngredients.map((mi) => mi.ingredient),
-			variants: menu.variants.map((variant: any) => ({
-				...variant,
-				allergens: variant.allergens.map((va: any) => va.allergen),
-				ingredients: variant.ingredients.map((vi: any) => vi.ingredient)
-			}))
-		};
-
-		console.log("Full menu:", JSON.stringify(fullMenu, null, 2));
+		if (versionsError) throw error(500, "Failed to load menu versions");
 
 		return {
-			menu: fullMenu,
-			allAllergens: allergens,
-			allIngredients: ingredients
+			menu: {
+				...menu,
+				currentVersion: menuVersion,
+				allVersions: versions
+			},
+			allAllergens: (await supabase.from("allergens").select("*")).data,
+			allIngredients: (await supabase.from("ingredients").select("*")).data
 		};
 	} catch (err) {
 		console.error("Unexpected error:", err);
