@@ -108,8 +108,8 @@
 				await Promise.all(ingredientPromises);
 			}
 
-			updateMessage = "Menu bylo upraveno a vytvořena nová verze!";
-			await goto($ROUTES.ADMIN.MENU.LIST);
+			updateMessage = "Menu bylo upraveno";
+			// await goto($ROUTES.ADMIN.MENU.LIST);
 		} catch (error) {
 			console.error("Chyba při aktualizaci menu:", error);
 			errorMessage = "Chyba při úpravě menu";

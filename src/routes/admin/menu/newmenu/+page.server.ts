@@ -1,36 +1,22 @@
-import { error } from "@sveltejs/kit";
-import type { PageServerLoad } from "./$types";
+import { error, json } from "@sveltejs/kit";
+import type { RequestHandler } from "./$types";
+import { MenuService } from "$lib/server/services/MenuService";
 
-export const load: PageServerLoad = async ({ locals: { supabase } }) => {
+export const POST: RequestHandler = async ({ request, locals: { supabase } }) => {
 	try {
-		// Načtení všech alergenů
-		const { data: allergens, error: allergensError } = await supabase
-			.from("allergens")
-			.select("*")
-			.order("number");
+		const menuData = await request.json();
+		const menuService = new MenuService(supabase);
+		const newMenu = await menuService.createMenu(menuData);
 
-		if (allergensError) {
-			console.error("Error fetching allergens:", allergensError);
-			throw error(500, "Failed to load allergens");
-		}
-
-		// Načtení všech ingrediencí
-		const { data: ingredients, error: ingredientsError } = await supabase
-			.from("ingredients")
-			.select("*")
-			.order("name");
-
-		if (ingredientsError) {
-			console.error("Error fetching ingredients:", ingredientsError);
-			throw error(500, "Failed to load ingredients");
-		}
-
-		return {
-			allAllergens: allergens,
-			allIngredients: ingredients
-		};
+		return json({
+			success: true,
+			data: newMenu
+		});
 	} catch (err) {
-		console.error("Unexpected error:", err);
-		throw error(500, "An unexpected error occurred");
+		console.error("Error creating menu:", err);
+		throw error(500, {
+			message: "Failed to create menu",
+			details: err instanceof Error ? err.message : "Unknown error"
+		});
 	}
 };
