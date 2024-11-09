@@ -5,7 +5,7 @@
 	import { readable } from "svelte/store";
 	import { slide } from "svelte/transition";
 
-	export let data;
+	export let data: any;
 	let { supabase, session, user } = data;
 	$: ({ supabase, session, user } = data);
 
@@ -101,14 +101,14 @@
 						<div class="flex pr-2">
 							<!-- svelte-ignore a11y-missing-attribute -->
 							<a
-								class="p-2 px-6 text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800"
+								class="p-2 px-6 text-blue-800 border-2 border-blue-900 btn rounded-xl hover:text-white hover:bg-blue-800"
 								href="/profile">Účet</a>
 						</div>
 						<div class="">
 							<button
 								on:click={signOut}
 								disabled={loading}
-								class="p-2 px-6 text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800">
+								class="p-2 px-6 text-blue-800 border-2 border-blue-900 btn rounded-xl hover:text-white hover:bg-blue-800">
 								Odhlásit
 							</button>
 						</div>
@@ -117,12 +117,12 @@
 					<div class="relative items-center hidden grid-cols-2 ml-auto md:grid">
 						<div class="flex pr-2">
 							<a
-								class="p-2 px-6 text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800"
+								class="p-2 px-6 text-blue-800 border-2 border-blue-900 btn rounded-3xl hover:text-white hover:bg-blue-800"
 								href="/login">Přihlásit</a>
 						</div>
 						<div class="flex">
 							<a
-								class="p-2 px-6 text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800"
+								class="p-2 px-6 text-blue-800 border-2 border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800"
 								href="/signup">
 								Přidej se
 							</a>
@@ -177,7 +177,7 @@
 						{#if $page.data.session}
 							<div class="col-end-2 pr-2">
 								<button
-									class="p-1 px-6 text-sm text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800"
+									class="p-1 px-6 text-sm text-blue-800 border border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800"
 									><a href="/profile">Účet</a>
 								</button>
 							</div>
@@ -185,19 +185,19 @@
 								<button
 									on:click={signOut}
 									disabled={loading}
-									class="p-1 px-6 text-sm text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800">
+									class="p-1 px-6 text-sm text-blue-800 border border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800">
 									Odhlásit
 								</button>
 							</div>
 						{:else}
 							<div class="col-end-2 pr-2">
 								<a
-									class="p-1 px-6 text-sm text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800"
+									class="p-1 px-6 text-sm text-blue-800 border border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800"
 									href="/login">Přihlásit</a>
 							</div>
 							<div class="">
 								<a
-									class="p-1 px-6 text-sm text-green-800 border border-green-700 btn rounded-3xl hover:text-white hover:bg-green-800"
+									class="p-1 px-6 text-sm text-blue-800 border border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800"
 									href="/signup">
 									Přidej se
 								</a>

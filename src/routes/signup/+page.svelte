@@ -34,11 +34,11 @@
 </svelte:head>
 
 <section>
-	<div class="py-20 footer_fix">
+	<div class="py-20">
 		<div
-			class="flex flex-col max-w-md px-4 pb-2 mx-auto mt-20 rounded-lg shadow pt-7 sm:px-6 md:px-8 lg:px-10 bg-slate-100 border-gray-300 border">
+			class="flex flex-col max-w-md pb-20 mx-auto mt-10 rounded-lg shadow pt-10 sm:px-6 md:px-8 lg:px-10 bg-slate-100 border-gray-300 border">
 			<div
-				class="self-center mb-2 text-3xl font-light text-gray-800 sm:text-2xl">
+				class="self-center mb-2 text-3xl font-light text-gray-800 sm:text-2xl pt-5">
 				Vytvoření nového účtu
 			</div>
 			<span
@@ -75,7 +75,7 @@
 								type="email"
 								id="email"
 								name="email"
-								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-green-600"
+								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-blue-600"
 								pattern="[^@]+@[^\.]+\..+"
 								placeholder="Email"
 								required />
@@ -103,7 +103,7 @@
 								type="password"
 								id="password"
 								name="password"
-								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-green-600"
+								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-blue-600"
 								placeholder="Heslo (min 6 znaků)"
 								minlength="6"
 								required />
@@ -130,7 +130,7 @@
 								value={form?.repassword ?? ""}
 								type="password"
 								id="repassword"
-								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-green-600"
+								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-blue-600"
 								name="repassword"
 								placeholder="Potvrzení hesla (napiš stejné heslo)"
 								minlength="6"
@@ -140,7 +140,7 @@
 					<div class="flex w-full my-4">
 						<button
 							type="submit"
-							class="w-full px-4 py-2 text-base font-semibold text-center text-white transition duration-200 ease-in-out transform bg-green-800 rounded-lg shadow-md hover:scale-105"
+							class="w-full px-4 py-2 text-base font-semibold text-center text-white transition duration-200 ease-in-out transform bg-blue-800 rounded-lg shadow-md hover:scale-105"
 							disabled={loading}>
 							{loading ? "Probíhá registrace..." : "Registrovat"}
 						</button>
@@ -153,7 +153,7 @@
 				</form>
 			</div>
 		</div>
-		<div class="form-widget ">
+		<div class="form-widget">
 			<div
 				class="flex max-w-md gap-2 px-4 py-8 mx-auto rounded-lg shadow flex-col-2 sm:px-6 md:px-8 lg:px-10 bg-slate-100 border-gray-300 border">
 				<div class="">
@@ -163,7 +163,7 @@
 						disabled={loading}
 						id="btn-success"
 						type="submit"
-						class="px-4 py-2 text-base font-semibold text-center transition duration-200 ease-in rounded-lg shadow-md hover:bg-green-800">
+						class="px-4 py-2 text-base font-semibold text-center transition duration-200 ease-in rounded-lg shadow-md hover:bg-blue-800">
 						<img src="/google.svg" alt="" width="40" height="40" />
 					</button>
 				</div>

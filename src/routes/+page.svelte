@@ -9,7 +9,7 @@
 	<meta name="description" content="Jednoduché online objednávání obědů" />
 </svelte:head>
 
-<section class="bg-slate-50 m-20 pt-10">
+<section class="bg-slate-50 md:m-5 xl:m-20 pt-20">
 	<div class="max-w-screen-xl mx-auto sm:px-6 lg:px-8 py-26">
 		<div class="mb-20">
 			<div
@@ -97,12 +97,12 @@
 					<div class="flex justify-center mt-8 space-x-4">
 						<a
 							href="/jidelnicek"
-							class="px-8 py-3 text-lg font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700">
+							class="px-8 py-3 text-lg font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 items-center flex">
 							Zobrazit menu
 						</a>
 						<a
 							href="/signup"
-							class="px-8 py-3 text-lg font-semibold text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50">
+							class="px-8 py-3 text-lg font-semibold text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 items-center flex">
 							Registrace
 						</a>
 					</div>
@@ -169,7 +169,7 @@
 		</div>
 		<div class="justify-center gap-8 md:container md:mx-auto sm:flex">
 			<div
-				class="w-full px-4 rounded-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50">
+				class="w-full px-4 rounded-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50 pb-5 mb-5">
 				<h3 class="px-5 pt-10 text-3xl font-semibold text-gray-700 sm:text-xl">
 					Kompostování a udržitelnost
 				</h3>
@@ -182,7 +182,7 @@
 				</p>
 			</div>
 			<div
-				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50">
+				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50 pb-5 mb-5">
 				<h3 class="px-5 pt-10 text-3xl font-semibold text-gray-700 sm:text-xl">
 					Rozšíření našich záhonů
 				</h3>
@@ -195,7 +195,7 @@
 				</p>
 			</div>
 			<div
-				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50">
+				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50 pb-5 mb-5">
 				<h3 class="px-5 pt-10 text-3xl font-semibold text-gray-700 sm:text-xl">
 					Nové výzvy a experimenty
 				</h3>
