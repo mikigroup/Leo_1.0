@@ -8,6 +8,7 @@
 	} from "@tanstack/svelte-table";
 	import type { ColumnDef, TableOptions } from "@tanstack/svelte-table";
 	import { ROUTES } from "$lib/stores/store";
+	import { formatVersionDate } from "$lib/utils/menuVersioning";
 
 	export let data;
 

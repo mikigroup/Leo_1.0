@@ -174,7 +174,7 @@
 
 
 <style lang="scss">
-	@import "$lib/styles/_variables.scss";
+  @use "$lib/styles/variables" as *;
 
 	.infoKoutek {
 		background-color: $cream;

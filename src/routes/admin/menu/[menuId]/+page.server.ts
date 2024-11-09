@@ -2,57 +2,52 @@
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ params, locals: { supabase }, url }) => {
+export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
 	const { menuId } = params;
-	const date = url.searchParams.get('date');
 
 	try {
-		// 1. Načtení aktuální nebo historické verze menu
-		const { data: menuVersion, error: versionError } = await supabase
-			.rpc('get_menu_version_at_date', {
-				p_menu_id: menuId,
-				p_date: date || 'now'
-			});
-
-		if (versionError) throw error(404, "Menu version not found");
-
-		// 2. Načtení detailů menu včetně variant, alergenů a ingrediencí
+		// 1. Načteme základní menu data
 		const { data: menu, error: menuError } = await supabase
-			.from("menus")
+			.from('menus')
 			.select(`
-        *,
-        variants:menu_variants(
-          *,
-          allergens:variant_allergens(allergen:allergens(*)),
-          ingredients:variant_ingredients(ingredient:ingredients(*))
-        ),
-        versions:menu_versions(*)
-      `)
-			.eq("id", menuId)
+                *,
+                variants:menu_variants(
+                    *,
+                    allergens:variant_allergens(allergen:allergens(*)),
+                    ingredients:variant_ingredients(ingredient:ingredients(*))
+                )
+            `)
+			.eq('id', menuId)
 			.single();
 
-		if (menuError) throw error(404, "Menu not found");
+		if (menuError) {
+			console.error("Error loading menu:", menuError);
+			throw error(404, "Menu not found");
+		}
 
-		// 3. Načtení všech verzí pro timeline
-		const { data: versions, error: versionsError } = await supabase
-			.from("menu_versions")
-			.select("*")
-			.eq("menu_id", menuId)
-			.order("valid_from", { ascending: false });
+		// 2. Načteme alergeny a ingredience pro selekty
+		const [allergensResult, ingredientsResult] = await Promise.all([
+			supabase
+				.from('allergens')
+				.select('*')
+				.order('number'),
+			supabase
+				.from('ingredients')
+				.select('*')
+				.order('name')
+		]);
 
-		if (versionsError) throw error(500, "Failed to load menu versions");
+		if (allergensResult.error) throw allergensResult.error;
+		if (ingredientsResult.error) throw ingredientsResult.error;
 
 		return {
-			menu: {
-				...menu,
-				currentVersion: menuVersion,
-				allVersions: versions
-			},
-			allAllergens: (await supabase.from("allergens").select("*")).data,
-			allIngredients: (await supabase.from("ingredients").select("*")).data
+			menu,
+			allAllergens: allergensResult.data,
+			allIngredients: ingredientsResult.data
 		};
+
 	} catch (err) {
-		console.error("Unexpected error:", err);
-		throw error(500, "An unexpected error occurred");
+		console.error("Error in menu edit load:", err);
+		throw error(500, "Failed to load menu data");
 	}
 };

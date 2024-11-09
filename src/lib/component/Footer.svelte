@@ -37,7 +37,7 @@
 </footer>
 
 <style lang="scss">
-  @import "$lib/styles/_variables.scss";
+  @use "$lib/styles/variables" as *;
 
   .paticka {
     background-color: $forest;
