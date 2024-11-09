@@ -1,105 +1,94 @@
-import { redirect } from "@sveltejs/kit";
+import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
-import { ROUTES_STORE } from "$lib/stores/store";
+import type { Menu, MenuVersion } from "$lib/types/menu";
 import { compareVersions } from "$lib/utils/menuVersioning";
 
-export const load: PageServerLoad = async ({
-																						 locals: { supabase, session },
-																						 url
-																					 }) => {
-	if (!session) {
-		throw redirect(303, ROUTES_STORE.ADMIN.BASE);
-	}
+export const load: PageServerLoad = async ({ locals: { supabase }, url }) => {
+	try {
+		// Parametry pro filtrování a stránkování
+		const page = parseInt(url.searchParams.get("page") || "1");
+		const itemsPerPage = 10;
+		const searchQuery = url.searchParams.get("search") || "";
+		const filterDate = url.searchParams.get("date") || "";
+		const filterActive = url.searchParams.get("active") || "";
 
-	const page = parseInt(url.searchParams.get("page") || "1");
-	const itemsPerPage = 10;
-	const searchQuery = url.searchParams.get("search") || "";
-	const filterDate = url.searchParams.get("date") || "";
-	const filterActive = url.searchParams.get("active") || "";
+		// Načítáme menu s verzemi a variantami
+		let query = supabase
+			.from('menus')
+			.select(`
+                *,
+                variants:menu_variants(
+                    *,
+                    allergens:variant_allergens(allergen:allergens(*)),
+                    ingredients:variant_ingredients(ingredient:ingredients(*))
+                ),
+                currentVersion:menu_versions(*)!inner(valid_to is null),
+                allVersions:menu_versions(*),
+                count: count(*) over()
+            `, { count: 'exact' })
+			.eq('deleted', false);
 
-	// Základní query bez range omezení pro vyhledávání
-	let query = supabase
-		.from("menus")
-		.select(
-			`*,
-       variants:menu_variants(id, description, variant_number)`,
-			{
-				count: "exact"
-			}
-		)
-		.order("date", { ascending: false })
-		.eq("deleted", false);
-
-	// Aplikace datumového filtru
-	if (filterDate) {
-		query = query.eq("date", filterDate);
-	}
-
-	// Aplikace filtru aktivity
-	if (filterActive) {
-		query = query.eq("active", filterActive === "true");
-	}
-
-	// Vyhledávání v celé DB
-	if (searchQuery) {
-		// Nejdřív získáme všechny menu_id z variant, které obsahují hledaný text
-		const { data: variantResults } = await supabase
-			.from("menu_variants")
-			.select("menu_id")
-			.ilike("description", `%${searchQuery}%`);
-
-		const menuIds = variantResults?.map((v) => v.menu_id) || [];
-
-		// Pak vytvoříme podmínku pro vyhledávání
-		if (menuIds.length > 0) {
-			query = query.or(
-				`id.in.(${menuIds.join(",")}),soup.ilike.%${searchQuery}%`
-			);
-		} else {
-			query = query.ilike("soup", `%${searchQuery}%`);
+		// Aplikace filtrů
+		if (searchQuery) {
+			query = query.or(`soup.ilike.%${searchQuery}%,variants.description.ilike.%${searchQuery}%`);
 		}
+
+		if (filterDate) {
+			query = query.eq('date', filterDate);
+		}
+
+		if (filterActive !== '') {
+			query = query.eq('active', filterActive === 'true');
+		}
+
+		// Stránkování
+		const from = (page - 1) * itemsPerPage;
+		const to = from + itemsPerPage - 1;
+
+		const { data: menus, error: menusError, count } = await query
+			.order('date', { ascending: false })
+			.range(from, to);
+
+		if (menusError) {
+			console.error('Error loading menus:', menusError);
+			throw error(500, 'Chyba při načítání menu');
+		}
+
+		// Přidáme informace o změnách
+		const menusWithChanges = menus.map(menu => {
+			if (menu.allVersions?.length > 1) {
+				const changes = compareVersions(
+					menu.allVersions[1], // předchozí verze
+					menu.allVersions[0]  // aktuální verze
+				);
+
+				return {
+					...menu,
+					currentVersion: menu.currentVersion ? {
+						...menu.currentVersion,
+						changes
+					} : null
+				};
+			}
+			return menu;
+		});
+
+		return {
+			menus: menusWithChanges,
+			pagination: {
+				page,
+				totalPages: Math.ceil((count || 0) / itemsPerPage),
+				totalItems: count,
+				itemsPerPage
+			},
+			filters: {
+				search: searchQuery,
+				date: filterDate,
+				active: filterActive
+			}
+		};
+	} catch (err) {
+		console.error('Unexpected error in load function:', err);
+		throw error(500, 'Chyba při načítání dat');
 	}
-
-	// Nejdřív získáme celkový počet výsledků
-	const { count } = await query;
-	const totalItems = count ?? 0;
-	const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
-
-	// Pak aplikujeme stránkování na filtrované výsledky
-	const start = (page - 1) * itemsPerPage;
-	const { data: menus, error } = await query.range(
-		start,
-		start + itemsPerPage - 1
-	);
-
-	if (error) {
-		console.error("Error fetching menus:", error);
-		throw error;
-	}
-
-	const itemsOnCurrentPage = menus?.length ?? 0;
-
-	const { data: profileTableSettings, error: profileError } = await supabase
-		.from("profiles")
-		.select("table_settings_menus")
-		.eq("id", session.user.id)
-		.single();
-
-	if (profileError) {
-		console.error("Error fetching profile:", profileError);
-		throw profileError;
-	}
-
-	return {
-		menus,
-		profileTableSettings,
-		currentPage: page,
-		totalPages,
-		totalItems,
-		itemsOnCurrentPage,
-		itemsPerPage,
-		searchQuery,
-		filterDate,
-		filterActive
-	};
 };

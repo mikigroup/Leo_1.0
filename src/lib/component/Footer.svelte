@@ -30,7 +30,7 @@
 			</p>
 		</div>
 		<div class="grid justify-end col-span-3 text-sm">
-			<p>Malý Leo 2022-2024 ver_1.05a</p>
+			<p>Malý Leo 2022-2024 ver_1.0a</p>
 		</div>
 	</div>
 

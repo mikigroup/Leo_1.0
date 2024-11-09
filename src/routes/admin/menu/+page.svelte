@@ -1,336 +1,366 @@
+<!-- src/routes/admin/menu/+page.svelte -->
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { writable } from "svelte/store";
-	import {
-		createSvelteTable,
-		flexRender,
-		getCoreRowModel
-	} from "@tanstack/svelte-table";
-	import type { ColumnDef, TableOptions } from "@tanstack/svelte-table";
-	import { ROUTES } from "$lib/stores/store";
+	import { fade } from "svelte/transition";
+	import type { Menu } from "$lib/types/menu";
 	import { formatVersionDate } from "$lib/utils/menuVersioning";
+	import { ROUTES } from "$lib/stores/store";
 
 	export let data;
+	let { menus, pagination, filters } = data;
+	$: ({ menus, pagination, filters } = data);
 
-	let {
-		session,
-		supabase,
-		menus,
-		profileTableSettings,
-		currentPage,
-		totalPages,
-		totalItems,
-		itemsOnCurrentPage,
-		itemsPerPage
-	} = data;
-	$: ({
-		session,
-		supabase,
-		menus,
-		profileTableSettings,
-		currentPage,
-		totalPages,
-		totalItems,
-		itemsOnCurrentPage,
-		itemsPerPage
-	} = data);
+	interface Pagination {   page: number;  totalPages: number;   totalItems: (number | null);   itemsPerPage: number }
 
-	let loading = false;
-	let filterDate = "";
-	let filterActive = "";
-	let searchQuery = "";
-	let searchInput = searchQuery;
-
-	function newMenuPage() {
-		goto($ROUTES.ADMIN.MENU.NEW);
-	}
-
-	function formatDateToCzech(date: any) {
-		if (!date) return "";
-		const parts = date.split("-");
-		if (parts.length !== 3) {
-			return date;
-		}
-		const [year, month, day] = parts;
-		return `${day}.${month}.${year}`;
-	}
-
-	const columnNames = {
-		date: "Datum",
-		soup: "Polévka",
-		variants: "Varianty",
-		active: "Aktivní",
-		notes: "Poznámky",
-		type: "Typ",
-		nutri: "Nutriční informace"
+	// Column visibility management
+	type Column = {
+		id: string;
+		label: string;
+		visible: boolean;
 	};
 
-	const columnOrder = Object.keys(columnNames);
+	let columns: Column[] = [
+		{ id: 'date', label: 'Datum', visible: true },
+		{ id: 'soup', label: 'Polévka', visible: true },
+		{ id: 'variants', label: 'Varianty', visible: true },
+		{ id: 'status', label: 'Stav', visible: true },
+		{ id: 'changes', label: 'Změny', visible: true },
+		{ id: 'actions', label: 'Akce', visible: true }
+	];
 
-	let visibleColumns =
-		profileTableSettings?.table_settings_menus ??
-		columnOrder.reduce((obj, column) => {
-			obj[column] = true;
-			return obj;
-		}, {});
+	// Pagination options
+	const pageSizeOptions = [5, 10, 20, 50];
+	let currentPageSize = pagination.itemsPerPage;
 
-	const visibleColumnsStore = writable(visibleColumns);
+	// Search and filter states
+	let searchInput = filters.search;
+	let dateFilter = filters.date;
+	let activeFilter = filters.active;
 
-	function toggleColumn(column) {
-		visibleColumnsStore.update((cols) => ({
-			...cols,
-			[column]: !cols[column]
-		}));
+	// Handlers
+	function handleSearch() {
+		updateUrlAndRefresh({
+			search: searchInput,
+			date: dateFilter,
+			active: activeFilter,
+			page: "1"
+		});
 	}
 
-	async function saveTableSettings() {
-		if (session?.user.id == undefined) {
-			console.error("Uživatel není přihlášen");
-			return;
-		}
-
-		const updatedSettings = columnOrder.reduce((obj, column) => {
-			obj[column] = $visibleColumnsStore[column];
-			return obj;
-		}, {});
-
-		const orderedSettings = columnOrder.reduce((obj, column) => {
-			obj[column] = updatedSettings[column];
-			return obj;
-		}, {});
-
-		const { data, error } = await supabase
-			.from("profiles")
-			.update({ table_settings_menus: orderedSettings })
-			.eq("id", session.user.id);
-
-		if (error) {
-			console.error("Chyba při ukládání nastavení filtrů:", error);
-		}
+	function clearFilters() {
+		searchInput = "";
+		dateFilter = "";
+		activeFilter = "";
+		handleSearch();
 	}
 
-	visibleColumnsStore.subscribe(saveTableSettings);
+	function handlePageSizeChange() {
+		updateUrlAndRefresh({
+			pageSize: currentPageSize.toString(),
+			page: "1"
+		});
+	}
 
-	// Vylepšená funkce pro filtrování menu
-	$: filteredMenus = menus?.filter((menu) => {
-		const matchesSearch = Object.values(menu).some((value) =>
-			value?.toString().toLowerCase().includes(searchQuery.toLowerCase())
-		);
+	$: startIndex = ((pagination?.page || 1) - 1) * (pagination?.itemsPerPage || 10) + 1;
+	$: endIndex = Math.min(
+		(pagination?.page || 1) * (pagination?.itemsPerPage || 10),
+		pagination?.totalItems || 0
+	);
+	$: totalCount = pagination?.totalItems || 0;
 
-		const matchesDate = !filterDate || menu.date === filterDate;
+	function handlePageChange(newPage: number) {
+		if (newPage < 1 || newPage > pagination.totalPages) return;
+		updateUrlAndRefresh({ page: newPage.toString() });
+	}
 
-		const matchesActive = !filterActive || menu.active.toString() === filterActive;
-
-		return matchesSearch && matchesDate && matchesActive;
-	});
-
-	$: columns = columnOrder
-		.filter((key) => $visibleColumnsStore[key])
-		.map((key) => ({
-			accessorKey: key,
-			header: columnNames[key],
-			cell: ({ getValue }) => {
-				if (key === "date") {
-					return formatDateToCzech(getValue());
-				} else if (key === "active") {
-					return getValue() ? "Ano" : "Ne";
-				}
-				return getValue();
+	function updateUrlAndRefresh(params: Record<string, string>) {
+		const url = new URL(window.location.href);
+		Object.entries(params).forEach(([key, value]) => {
+			if (value) {
+				url.searchParams.set(key, value);
+			} else {
+				url.searchParams.delete(key);
 			}
-		}));
-
-	$: options = writable<TableOptions<(typeof menus)[0]>>({
-		data: filteredMenus,
-		columns,
-		getCoreRowModel: getCoreRowModel()
-	});
-
-	$: visibleColumnsStore.subscribe((value) => {
-		options.update((options) => ({
-			...options,
-			columns: columns.filter((column) => value[column.accessorKey])
-		}));
-	});
-
-	$: table = createSvelteTable(options);
-
-	function previousPage() {
-		if (currentPage > 1) {
-			goto(`?page=${currentPage - 1}`);
-		}
+		});
+		goto(url.toString());
 	}
 
-	function nextPage() {
-		if (currentPage < totalPages) {
-			goto(`?page=${currentPage + 1}`);
-		}
-	}
-
-	// Upravená funkce pro vyhledávání, která zahrnuje i datum a stav aktivity
-	async function handleSearch() {
-		loading = true;
+	async function handleEdit(menuId: string) {
 		try {
-			const searchParams = new URLSearchParams();
-
-			if (searchInput) {
-				searchParams.set('search', searchInput);
-			}
-			if (filterDate) {
-				searchParams.set('date', filterDate);
-			}
-			if (filterActive) {
-				searchParams.set('active', filterActive);
-			}
-			searchParams.set('page', '1');
-
-			await goto(`?${searchParams.toString()}`);
+			await goto($ROUTES.ADMIN.MENU.EDIT(menuId));
 		} catch (error) {
-			console.error("Chyba při vyhledávání:", error);
-		} finally {
-			loading = false;
+			console.error('Error navigating to edit page:', error);
 		}
+	}
+
+	function getStatusClass(menu: Menu): string {
+		if (!menu.active) {
+			return 'text-red-600';
+		}
+		if (menu.currentVersion?.changes?.modified?.length) {
+			return 'text-yellow-600';
+		}
+		return 'text-green-600';
 	}
 </script>
 
-<svelte:head>
-	<title>LEO - Menu</title>
-</svelte:head>
+<div class="relative p-5 overflow-x-auto shadow-md sm:rounded-lg">
+	<!-- Header -->
+	<div class="flex justify-between mb-6">
+		<h1 class="text-2xl font-bold">Seznam menu</h1>
+		<button
+			on:click={() => goto($ROUTES.ADMIN.MENU.NEW)}
+			class="btn btn-primary">
+			Nové menu
+		</button>
+	</div>
 
-<section>
-	<div class="flex justify-between">
-		<div class="flex flex-col gap-2 md:flex-row">
-			<div>
-				<button on:click={newMenuPage} class="btn btn-outline">
-					Vytvořit menu
+	<!-- Search and Filters -->
+	<div class="flex flex-col md:flex-row gap-4 mb-6 bg-gray-50 p-4 rounded-lg">
+		<div class="flex-1 space-y-4">
+			<div class="flex flex-wrap gap-4">
+				<div class="flex-1 min-w-[200px]">
+					<label class="label">Vyhledávání</label>
+					<input
+						type="text"
+						placeholder="Hledat v menu..."
+						bind:value={searchInput}
+						class="input input-bordered w-full" />
+				</div>
+
+				<div class="flex-1 min-w-[200px]">
+					<label class="label">Datum</label>
+					<input
+						type="date"
+						bind:value={dateFilter}
+						class="input input-bordered w-full" />
+				</div>
+
+				<div class="flex-1 min-w-[200px]">
+					<label class="label">Stav</label>
+					<select
+						bind:value={activeFilter}
+						class="select select-bordered w-full">
+						<option value="">Všechny stavy</option>
+						<option value="true">Aktivní</option>
+						<option value="false">Neaktivní</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="flex gap-2">
+				<button on:click={handleSearch} class="btn btn-primary">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 mr-2"
+						viewBox="0 0 20 20"
+						fill="currentColor">
+						<path
+							fill-rule="evenodd"
+							d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+							clip-rule="evenodd" />
+					</svg>
+					Vyhledat
+				</button>
+				<button on:click={clearFilters} class="btn btn-ghost">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 mr-2"
+						viewBox="0 0 20 20"
+						fill="currentColor">
+						<path
+							fill-rule="evenodd"
+							d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+							clip-rule="evenodd" />
+					</svg>
+					Vyčistit filtry
 				</button>
 			</div>
+		</div>
+
+		<!-- Column and Page Size Controls -->
+		<div class="flex flex-col md:flex-row gap-4">
 			<div>
-				<input type="date" bind:value={filterDate} class="btn btn-outline" />
-			</div>
-			<div>
+				<label class="label">Počet na stránku</label>
 				<select
-					bind:value={filterActive}
-					class="select select-bordered w-full max-w-xs border-black">
-					<option value="">Všechny aktivity</option>
-					<option value="true">Aktivní</option>
-					<option value="false">Neaktivní</option>
+					bind:value={currentPageSize}
+					on:change={handlePageSizeChange}
+					class="select select-bordered">
+					{#each pageSizeOptions as size}
+						<option value={size}>{size}</option>
+					{/each}
 				</select>
 			</div>
-			<div class="flex gap-2">
-				<input
-					type="text"
-					placeholder="Hledat..."
-					class="input input-bordered input-md w-full max-w-xs border-black"
-					bind:value={searchInput} />
-				<button
-					class="btn btn-outline"
-					on:click={handleSearch}
-					disabled={loading}>
-					{loading ? "Vyhledávám..." : "Vyhledat"}
-				</button>
-			</div>
-		</div>
-	</div>
-</section>
 
-<hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
-
-<section>
-	<div class="join grid grid-cols-2 w-1/2 mx-auto my-10">
-		<button
-			class="join-item btn btn-outline"
-			on:click={previousPage}
-			disabled={currentPage === 1}>
-			Předchozí stránka
-		</button>
-		<button
-			class="join-item btn btn-outline"
-			on:click={nextPage}
-			disabled={currentPage === totalPages}>
-			Další stránka
-		</button>
-	</div>
-
-	<div class="flex flex-col md:flex-row justify-between items-center w-full my-4">
-		<p>Celkový počet menu: {totalItems}</p>
-		<p>Stránka {currentPage} z {totalPages}</p>
-		<p>Zobrazeno {itemsOnCurrentPage} z {totalItems} menu</p>
-	</div>
-</section>
-
-<section>
-	<div class="flex justify-end dropdown">
-		<button class="btn btn-outline" tabindex="0">Sloupce</button>
-		<ul
-			tabindex="0"
-			class="p-2 shadow dropdown-content menu bg-base-100 rounded-box w-52">
-			{#each Object.keys(visibleColumns) as column}
-				<li>
-					<label>
-						<input
-							type="checkbox"
-							checked={$visibleColumnsStore[column]}
-							on:change={() => toggleColumn(column)} />
-						{columnNames[column]}
-					</label>
-				</li>
-			{/each}
-		</ul>
-	</div>
-</section>
-
-<section>
-	<div class="flex flex-wrap">
-		<div class="hidden w-full gap-4 p-2 px-5 my-2 border border-gray-300 md:flex rounded-xl bg-gray-400">
-			{#each columnOrder.filter((col) => $visibleColumnsStore[col]) as column, index}
-				<div class="w-full {column === 'variants' || column === 'soup' ? 'md:w-1/4' : 'md:w-1/6 lg:w-1/6 xl:w-1/6'} {index < columnOrder.filter((col) => $visibleColumnsStore[col]).length - 1 ? 'border-r-2' : ''}">
-					{columnNames[column]}
-				</div>
-			{/each}
-			<div class="flex justify-end w-full md:w-1/6 lg:w-1/6 xl:w-1/6">
-				Editovat
-			</div>
-		</div>
-
-		{#if filteredMenus && filteredMenus.length > 0}
-			{#each $table.getRowModel().rows as row, index}
-				<div class="w-full gap-4 p-2 px-5 my-1 border border-gray-300 md:flex rounded-xl hover:bg-cyan-700 hover:text-white row {index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}">
-					{#each row.getVisibleCells() as cell}
-						<div class="w-full {cell.column.id === 'variants' || cell.column.id === 'soup' ? 'md:w-1/4' : 'md:w-1/6 lg:w-1/6 xl:w-1/6'} flex items-center">
-							{#if cell.column.id === "variants"}
-								{#if Array.isArray(cell.getValue()) && cell.getValue().length > 0}
-									<div class="pl-4">
-										{#each cell.getValue().sort((a, b) => a.variant_number - b.variant_number) as variant}
-											<div class="mb-1">
-												<span class="font-medium">{variant.variant_number}.</span>
-												{variant.description}
-											</div>
-										{/each}
-									</div>
-								{:else}
-									<span class="text-gray-400">Žádné varianty</span>
-								{/if}
-							{:else if cell.column.id === "active"}
-								{cell.getValue() ? "Ano" : "Ne"}
-							{:else if cell.column.id === "date"}
-								{formatDateToCzech(cell.getValue())}
-							{:else}
-								{cell.getValue() ?? ""}
-							{/if}
-						</div>
+			<div class="dropdown dropdown-end">
+				<label class="label">Sloupce</label>
+				<label tabindex="0" class="btn btn-outline w-full">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="h-5 w-5 mr-2"
+						viewBox="0 0 20 20"
+						fill="currentColor">
+						<path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+						<path
+							fill-rule="evenodd"
+							d="M3 5a2 2 0 012-2h10a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm2-2h10v2H5V3zm0 4v8h10V7H5z"
+							clip-rule="evenodd" />
+					</svg>
+					Sloupce
+				</label>
+				<ul
+					tabindex="0"
+					class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-52">
+					{#each columns as column}
+						<li>
+							<label class="flex items-center gap-2 cursor-pointer">
+								<input
+									type="checkbox"
+									bind:checked={column.visible}
+									class="checkbox" />
+								{column.label}
+							</label>
+						</li>
 					{/each}
-					<div class="w-full md:w-1/6 lg:w-1/6 xl:w-1/6 flex items-center justify-end">
-						<a
-							href="/admin/menu/{row.original.id}"
-							data-sveltekit-preload-data
-							class="font-medium hover:underline">
-							Upravit
-						</a>
-					</div>
-				</div>
-			{/each}
-		{:else}
-			<p>Žádná menu</p>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<!-- Table -->
+	<div class="overflow-x-auto">
+		<table class="w-full text-sm text-left text-gray-500">
+			<thead class="text-xs text-gray-700 uppercase bg-gray-50">
+				<tr>
+					{#each columns as column}
+						{#if column.visible}
+							<th scope="col" class="px-6 py-3">
+								{column.label}
+							</th>
+						{/if}
+					{/each}
+				</tr>
+			</thead>
+			<tbody>
+				{#each menus as menu (menu.id)}
+					<tr class="bg-white border-b hover:bg-gray-50" transition:fade>
+						{#if columns.find((c) => c.id === "date")?.visible}
+							<td class="px-6 py-4">
+								{formatVersionDate(menu.date)}
+							</td>
+						{/if}
+
+						{#if columns.find((c) => c.id === "soup")?.visible}
+							<td class="px-6 py-4">
+								{menu.soup || "-"}
+							</td>
+						{/if}
+
+						{#if columns.find((c) => c.id === "variants")?.visible}
+							<td class="px-6 py-4">
+								{menu.variants?.length || 0} variant(y)
+							</td>
+						{/if}
+
+						{#if columns.find((c) => c.id === "status")?.visible}
+							<td class="px-6 py-4">
+								<span class={getStatusClass(menu)}>
+									{menu.active ? "Aktivní" : "Neaktivní"}
+								</span>
+							</td>
+						{/if}
+
+						{#if columns.find((c) => c.id === "changes")?.visible}
+							<td class="px-6 py-4">
+								{#if menu.currentVersion?.changes}
+									<div class="text-xs">
+										{#if menu.currentVersion.changes.modified?.length}
+											<span class="text-yellow-600">
+												{menu.currentVersion.changes.modified.length} změn
+											</span>
+										{/if}
+										{#if menu.currentVersion.changes.added?.length}
+											<span class="text-green-600 ml-2">
+												{menu.currentVersion.changes.added.length} nové
+											</span>
+										{/if}
+									</div>
+								{/if}
+							</td>
+						{/if}
+
+						{#if columns.find((c) => c.id === "actions")?.visible}
+							<td class="px-6 py-4">
+								<button
+									on:click={() => handleEdit(menu.id)}
+									class="font-medium text-blue-600 hover:underline">
+									Upravit
+								</button>
+							</td>
+						{/if}
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+
+		{#if menus.length === 0}
+			<div class="text-center py-8 text-gray-500">Žádná menu k zobrazení</div>
 		{/if}
 	</div>
-</section>
+
+	<!-- Pagination -->
+	<div
+		class="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
+		<div class="text-sm text-gray-700">
+			Zobrazeno {startIndex} až {endIndex} z {totalCount} záznamů
+		</div>
+
+		<div class="flex items-center gap-2">
+			<button
+				class="btn btn-sm"
+				disabled={pagination.page === 1}
+				on:click={() => handlePageChange(1)}>
+				«
+			</button>
+			<button
+				class="btn btn-sm"
+				disabled={pagination.page === 1}
+				on:click={() => handlePageChange(pagination.page - 1)}>
+				‹
+			</button>
+
+			{#each Array(pagination.totalPages) as _, i}
+				{#if i + 1 === 1 || i + 1 === pagination.totalPages || (i + 1 >= pagination.page - 1 && i + 1 <= pagination.page + 1)}
+					<button
+						class="btn btn-sm {pagination.page === i + 1 ? 'btn-primary' : ''}"
+						on:click={() => handlePageChange(i + 1)}>
+						{i + 1}
+					</button>
+				{:else if i + 1 === pagination.page - 2 || i + 1 === pagination.page + 2}
+					<span class="px-2">...</span>
+				{/if}
+			{/each}
+
+			<button
+				class="btn btn-sm"
+				disabled={pagination.page === pagination.totalPages}
+				on:click={() => handlePageChange(pagination.page + 1)}>
+				›
+			</button>
+			<button
+				class="btn btn-sm"
+				disabled={pagination.page === pagination.totalPages}
+				on:click={() => handlePageChange(pagination.totalPages)}>
+				»
+			</button>
+		</div>
+	</div>
+</div>
+
+<style>
+	/* Additional styles if needed */
+	:global(.table-container) {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+</style>

@@ -73,7 +73,7 @@
 			</div>
 			<!-- menu -->
 			<div
-				class="items-center hidden grid-cols-4 text-center border-2 rounded-full lg:grid textmenu md:grid bg-slate-50">
+				class="items-center hidden m-2 grid-cols-4 text-center border-2 rounded-full lg:grid md:grid bg-slate-50">
 				<div class="border-r-2 text-slate-600" id="">
 					<a class="navItem" href="/">Úvod</a>
 				</div>
