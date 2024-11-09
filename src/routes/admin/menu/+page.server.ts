@@ -1,6 +1,7 @@
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import { ROUTES_STORE } from "$lib/stores/store";
+import { compareVersions } from "$lib/utils/menuVersioning";
 
 export const load: PageServerLoad = async ({
 																						 locals: { supabase, session },

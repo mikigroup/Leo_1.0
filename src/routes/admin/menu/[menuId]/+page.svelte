@@ -1,4 +1,3 @@
-// src/routes/admin/menu/[menuId]/+page.svelte
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { fade, fly } from "svelte/transition";
