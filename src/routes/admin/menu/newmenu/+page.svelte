@@ -5,7 +5,7 @@
 	import type { PageData } from "./$types";
 	import type { Menu } from "$lib/types/menu";
 	import { ROUTES } from "$lib/stores/store";
-	
+
 
 	export let data: PageData;
 	let { allAllergens, allIngredients } = data;
