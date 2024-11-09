@@ -60,7 +60,7 @@
 </svelte:head>
 
 <main>
-	<section class="max-w-screen-lg py-16 mx-auto mt-20 mb-10 rounded-lg md:px-4 bg-stone-100">
+	<section class="max-w-screen-lg py-16 mx-auto mb-10 rounded-lg md:px-4 bg-stone-100">
 		<h1 class="mb-10 text-5xl font-extrabold tracking-tight text-center text-gray-900">
 			Jídelníček
 		</h1>

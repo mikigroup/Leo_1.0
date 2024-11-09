@@ -34,9 +34,9 @@
 </svelte:head>
 
 <section>
-	<div class="pt-20 footer_fix">
+	<div class="py-20 footer_fix">
 		<div
-			class="flex flex-col max-w-md px-4 pb-2 mx-auto mt-20 bg-white rounded-lg shadow pt-7 sm:px-6 md:px-8 lg:px-10">
+			class="flex flex-col max-w-md px-4 pb-2 mx-auto mt-20 rounded-lg shadow pt-7 sm:px-6 md:px-8 lg:px-10 bg-slate-100 border-gray-300 border">
 			<div
 				class="self-center mb-2 text-3xl font-light text-gray-800 sm:text-2xl">
 				Vytvoření nového účtu
@@ -75,7 +75,7 @@
 								type="email"
 								id="email"
 								name="email"
-								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray-aceholder-gray-400 focus:outline-none focus:border-green-600"
+								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-green-600"
 								pattern="[^@]+@[^\.]+\..+"
 								placeholder="Email"
 								required />
@@ -103,7 +103,7 @@
 								type="password"
 								id="password"
 								name="password"
-								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray-aceholder-gray-400 focus:outline-none focus:border-green-600"
+								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-green-600"
 								placeholder="Heslo (min 6 znaků)"
 								minlength="6"
 								required />
@@ -130,7 +130,7 @@
 								value={form?.repassword ?? ""}
 								type="password"
 								id="repassword"
-								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray-aceholder-gray-400 focus:outline-none focus:border-green-600"
+								class="w-full px-4 py-2 text-base bg-white border border-gray-300 rounded-lg shadow-sm appearance-none text-gray placeholder-gray-400 focus:outline-none focus:border-green-600"
 								name="repassword"
 								placeholder="Potvrzení hesla (napiš stejné heslo)"
 								minlength="6"
@@ -153,9 +153,9 @@
 				</form>
 			</div>
 		</div>
-		<div class="form-widget">
+		<div class="form-widget ">
 			<div
-				class="flex max-w-md gap-2 px-4 py-8 mx-auto bg-white rounded-lg shadow flex-col-2 sm:px-6 md:px-8 lg:px-10">
+				class="flex max-w-md gap-2 px-4 py-8 mx-auto rounded-lg shadow flex-col-2 sm:px-6 md:px-8 lg:px-10 bg-slate-100 border-gray-300 border">
 				<div class="">
 					<button
 						on:click={signInWithGoogle}

@@ -66,7 +66,7 @@
 	<script src="https://www.google.com/recaptcha/api.js?render={key}"></script>
 </svelte:head>
 
-<main
+<div
 	class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
 	<div class="max-w-6xl mx-auto px-4 py-20">
 		<h1
@@ -301,4 +301,4 @@
 			</div>
 		</div>
 	</div>
-</main>
+</div>

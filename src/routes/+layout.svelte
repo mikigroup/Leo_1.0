@@ -35,13 +35,13 @@
 {/if}
 
 {#if !isAdminRoute}
-	<div class="pt-5 mt-20" />
+	<div class="pt-5" />
 {:else}
 	<div class="" />
 {/if}
 
 <main>
-	<slot class="mt-10 container mx-auto" />
+	<slot class="container mx-auto" />
 </main>
 
 <!--<GDPR cookieName="gdpr" />   NUTNO ZAPNOUT PRI OSTREM PROVOZU-->
