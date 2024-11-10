@@ -1,8 +1,13 @@
 <script lang="ts">
 	import TagSelector from "./TagSelector.svelte";
-	import type { Menu } from "$lib/types/menu";
-	import type { Database } from "$lib/database.types";
-	import type { TagUpdateEvent, MenuDetailEvents, MenuDetailProps, TabType, TabChangeEvent, MenuVariant } from "./types";
+	import type { Menu, MenuVariant } from "$lib/types/menu";
+	import type {
+		MenuDetailEvents,
+		MenuDetailProps,
+		TabType,
+		TabChangeEvent,
+		TagUpdateEvent
+	} from "$lib/types/MenuItemDetail";
 	import { createEventDispatcher } from "svelte";
 	import { page } from "$app/stores";
 	import { ROUTES } from "$lib/stores/store";
@@ -25,28 +30,38 @@
 		dispatch("update", menu);
 	}
 
-	function handleAllergensUpdate(event: CustomEvent<TagUpdateEvent>): void {
-		menu = { ...menu, allergens: event.detail.tags };
+	function handleAllergensUpdate(event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+		if (!menu) return;
+		menu = {
+			...menu,
+			allergens: event.detail.tags as DbAllergen[]
+		};
 	}
 
-	function handleIngredientsUpdate(event: CustomEvent<TagUpdateEvent>): void {
-		menu = { ...menu, ingredients: event.detail.tags };
+	function handleIngredientsUpdate(event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+		if (!menu) return;
+		menu = {
+			...menu,
+			ingredients: event.detail.tags as DbIngredient[]
+		};
 	}
 
-	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>): void {
+	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+		if (!menu?.variants) return;
 		const updatedVariants = [...menu.variants];
 		updatedVariants[variantIndex] = {
 			...updatedVariants[variantIndex],
-			allergens: event.detail.tags
+			allergens: event.detail.tags as DbAllergen[]
 		};
 		menu = { ...menu, variants: updatedVariants };
 	}
 
-	function handleVariantIngredientsUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>): void {
+	function handleVariantIngredientsUpdate(variantIndex: number, event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+		if (!menu?.variants) return;
 		const updatedVariants = [...menu.variants];
 		updatedVariants[variantIndex] = {
 			...updatedVariants[variantIndex],
-			ingredients: event.detail.tags
+			ingredients: event.detail.tags as DbIngredient[]
 		};
 		menu = { ...menu, variants: updatedVariants };
 	}
