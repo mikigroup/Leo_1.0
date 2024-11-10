@@ -89,7 +89,7 @@
 </script>
 
 <nav class="m-2" data-sveltekit-preload-data="hover">
-	<div class="navbar border-cyan-500 border rounded-2xl !py-0 bg-sky-300">
+	<div class="navbar border-slate-600 border rounded-2xl !py-0 bg-sky-500">
 		<div class="navbar-start">
 			<div class="dropdown">
 				<div tabindex="0" role="button" class="btn btn-ghost btn-circle">
@@ -174,16 +174,16 @@
 					</div>
 				</div>
 			{:else}
-				<button
+				<button class="btn btn-outline mr-2"
 					><a
 						href="/admin/signin"
-						class="text-white bg-blue-700 mr-2 hover:bg-blue-800 rounded-lg px-5 py-2.5 text-center"
+						class=""
 						>Přihlásit</a
 					></button>
-				<button
+				<button class="btn btn-outline"
 					><a
 						href="/admin/signup"
-						class="text-white bg-blue-700 mr-2 hover:bg-blue-800 rounded-lg px-5 py-2.5 text-center"
+						class=""
 						>Registrovat</a
 					></button>
 			{/if}

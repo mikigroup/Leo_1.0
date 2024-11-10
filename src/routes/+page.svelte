@@ -115,6 +115,8 @@
 	</div>
 </section>
 
+
+
 <section class="py-40 argumenty">
 	<div class="max-w-screen-2xl px-4 mx-auto sm:px-6 lg:px-8">
 		<div class="text-center">
@@ -123,7 +125,7 @@
 			</h2>
 		</div>
 		<div
-			class="grid gap-8 mt-12 sm:grid-cols-2 lg:grid-cols-3 shadow-2xl md:p-10 lg:p-20">
+			class="grid gap-8 mt-12 sm:grid-cols-2 lg:grid-cols-3 shadow-2xl md:p-10 lg:p-20 border-gray-300 border rounded-xl">
 			<div class="p-6 bg-white rounded-lg shadow-lg">
 				<div
 					class="inline-flex items-center justify-center w-12 h-12 mb-4 text-blue-600 bg-blue-100 rounded-full">
@@ -182,7 +184,7 @@
 				</p>
 			</div>
 			<div
-				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50 pb-5 mb-5">
+				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50 pxb-5 mb-5">
 				<h3 class="px-5 pt-10 text-3xl font-semibold text-gray-700 sm:text-xl">
 					Rozšíření našich záhonů
 				</h3>
@@ -195,7 +197,7 @@
 				</p>
 			</div>
 			<div
-				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50 pb-5 mb-5">
+				class="w-full px-4 rounded-lg shadow-lg sm:w-1/2 md:w-1/2 lg:w-1/4 bg-slate-50 pxb-5 mb-5">
 				<h3 class="px-5 pt-10 text-3xl font-semibold text-gray-700 sm:text-xl">
 					Nové výzvy a experimenty
 				</h3>

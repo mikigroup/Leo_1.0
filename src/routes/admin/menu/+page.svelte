@@ -143,7 +143,7 @@
 					</select>
 
 					<div class="dropdown dropdown-end">
-						<button tabindex="0" class="btn join-item">Sloupce</button>
+						<button tabindex="0" class="btn join-item ">Sloupce</button>
 						<ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
 							{#each columns as column}
 								<li>

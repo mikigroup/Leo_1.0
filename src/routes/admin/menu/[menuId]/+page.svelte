@@ -2,30 +2,17 @@
 	import { goto } from "$app/navigation";
 	import { fade, fly } from "svelte/transition";
 	import MenuItemDetail from "../MenuItemDetail.svelte";
-	import VersionTimeline from "./VersionTimeline.svelte";
-	import type { Menu, MenuVersion } from "$lib/types/menu";
-	import { compareVersions, formatVersionDate } from "$lib/utils/menuVersioning";
+	import type { PageData } from "./$types";
+	import type { Menu } from "$lib/types/menu";
 	import { ROUTES } from "$lib/stores/store";
 
-	export let data;
+	export let data: PageData;
 	let { menu, allAllergens, allIngredients, supabase } = data;
 	$: ({ menu, allAllergens, allIngredients, supabase } = data);
 
 	let loading = false;
 	let updateMessage = "";
 	let errorMessage = "";
-	let showVersionHistory = false;
-
-	async function validateVersion(version: MenuVersion) {
-		const { data: overlapping, error } = await supabase
-			.from('menu_versions')
-			.select('*')
-			.eq('menu_id', version.menu_id)
-			.overlaps('valid_from', version.valid_from);
-
-		if (error) throw new Error(`Validation error: ${error.message}`);
-		if (overlapping?.length) throw new Error('Překrývající se verze');
-	}
 
 	async function updateMenu() {
 		try {
@@ -33,33 +20,49 @@
 			errorMessage = "";
 			updateMessage = "";
 
-			const newVersion: Partial<MenuVersion> = {
-				menu_id: menu.id,
-				date: menu.date,
-				soup: menu.soup,
-				active: menu.active,
-				notes: menu.notes,
-				type: menu.type,
-				nutri: menu.nutri,
-				valid_from: new Date().toISOString()
+			console.log('Odesílaná data:', JSON.stringify(menu, null, 2));
+
+			// Validace
+			if (!menu.date) {
+				errorMessage = "Datum je povinné";
+				return;
+			}
+
+			// Vyfiltrujeme prázdné varianty
+			const validVariants = menu.variants.filter(v =>
+				v.description.trim() !== '' || v.price > 0
+			);
+
+			// Připravíme data pro odeslání
+			const menuData = {
+				...menu,
+				variants: validVariants.map((v, index) => ({
+					...v,
+					variant_number: (index + 1).toString()
+				}))
 			};
 
-			// Validate new version
-			await validateVersion(newVersion as MenuVersion);
+			// Aktualizace hlavního menu
+			const { error: menuError } = await supabase
+				.from("menus")
+				.update({
+					date: menuData.date,
+					soup: menuData.soup,
+					active: menuData.active,
+					notes: menuData.notes,
+					type: menuData.type,
+					nutri: menuData.nutri
+				})
+				.eq("id", menu.id);
 
-			// Create new version
-			const { data: createdVersion, error: versionError } = await supabase
-				.rpc('create_menu_version', newVersion);
+			if (menuError) throw menuError;
 
-			if (versionError) throw versionError;
-
-			// Update variants
-			for (const variant of menu.variants) {
+			// Aktualizace variant
+			for (const variant of menuData.variants) {
 				const { error: variantError } = await supabase
 					.from("menu_variants")
 					.upsert({
 						menu_id: menu.id,
-						menu_version_id: createdVersion.id,
 						id: variant.id,
 						variant_number: variant.variant_number,
 						description: variant.description,
@@ -68,7 +71,7 @@
 
 				if (variantError) throw variantError;
 
-				// Update allergens
+				// Aktualizace alergenů
 				await supabase
 					.from("variant_allergens")
 					.delete()
@@ -85,7 +88,7 @@
 						);
 				}
 
-				// Update ingredients
+				// Aktualizace ingrediencí
 				await supabase
 					.from("variant_ingredients")
 					.delete()
@@ -103,31 +106,12 @@
 				}
 			}
 
-			// Compare with previous version if exists
-			if (menu.currentVersion) {
-				const changes = compareVersions(menu.currentVersion, createdVersion);
-				console.log('Version changes:', changes);
-			}
-
-			updateMessage = "Menu bylo úspěšně aktualizováno";
-			await goto($ROUTES.ADMIN.MENU.LIST);
-
+			updateMessage = "Menu úspěšně aktualizováno!";
 		} catch (error) {
 			console.error("Error updating menu:", error);
 			errorMessage = error instanceof Error ? error.message : "Nastala chyba při aktualizaci menu";
 		} finally {
 			loading = false;
-		}
-	}
-
-	async function switchVersion(version: MenuVersion) {
-		try {
-			const searchParams = new URLSearchParams(window.location.search);
-			searchParams.set('date', version.valid_from);
-			await goto(`?${searchParams.toString()}`);
-		} catch (error) {
-			console.error("Error switching version:", error);
-			errorMessage = "Nepodařilo se přepnout verzi";
 		}
 	}
 
@@ -150,65 +134,52 @@
 	}
 
 	function handleUpdate(event: CustomEvent<Menu>) {
+		console.log('Received update:', JSON.stringify(event.detail, null, 2));
 		menu = event.detail;
 	}
 </script>
 
 <div class="relative p-5 overflow-x-auto shadow-md sm:rounded-lg border border-zinc-200"
 		 in:fly={{ y: 50, duration: 500 }}>
-
 	<div class="flex justify-between items-center mb-4">
-		<button on:click={() => goto($ROUTES.ADMIN.MENU.LIST)}
-						class="btn btn-outline">
+		<button
+			on:click={() => goto($ROUTES.ADMIN.MENU.LIST)}
+			class="btn btn-outline">
 			Zpět
 		</button>
 
-		<button class="btn btn-outline"
-						on:click={() => showVersionHistory = !showVersionHistory}>
-			{showVersionHistory ? 'Skrýt historii' : 'Zobrazit historii'}
-		</button>
+		{#if updateMessage}
+			<div transition:fade class="bg-green-200 text-green-800 rounded p-2">
+				<span>{updateMessage}</span>
+			</div>
+		{/if}
 
-		<div class="flex flex-col gap-2 md:flex-row">
-			<button disabled={loading}
-							on:click={updateMenu}
-							class="btn btn-outline">
-				{loading ? "Ukládá se..." : "Vytvořit verzi"}
+		{#if errorMessage}
+			<div transition:fade class="bg-red-200 text-red-800 rounded p-2">
+				<span>{errorMessage}</span>
+			</div>
+		{/if}
+
+		<div class="flex gap-2">
+			<button
+				disabled={loading}
+				on:click={updateMenu}
+				class="btn btn-outline">
+				{loading ? "Ukládá se..." : "Uložit změny"}
 			</button>
-			<button class="btn btn-outline btn-error"
-							disabled={loading}
-							on:click={softDeleteMenu}>
+			<button
+				class="btn btn-outline btn-error"
+				disabled={loading}
+				on:click={softDeleteMenu}>
 				{loading ? "Maže se..." : "Smazat menu"}
 			</button>
 		</div>
 	</div>
 
-	{#if updateMessage}
-		<div transition:fade class="alert alert-success mt-4">
-			{updateMessage}
-		</div>
-	{/if}
-
-	{#if errorMessage}
-		<div transition:fade class="alert alert-error mt-4">
-			{errorMessage}
-		</div>
-	{/if}
-
-	{#if showVersionHistory && menu.allVersions}
-		<div class="mb-6" transition:fade>
-			<VersionTimeline
-				versions={menu.allVersions}
-				selectedVersion={menu.currentVersion}
-				{formatVersionDate}
-				on:select={e => switchVersion(e.detail)}
-			/>
-		</div>
-	{/if}
+	<div class="divider"></div>
 
 	<div class="rounded-xl p-4 md:p-10 bg-neutral-200">
-		<h2 class="text-2xl font-bold mb-6">
-			Úprava menu
-		</h2>
+		<h2 class="text-2xl font-bold mb-6">Upravit Menu</h2>
 		<MenuItemDetail
 			bind:menu
 			{allAllergens}
