@@ -2,20 +2,20 @@
 	import TagSelector from "./TagSelector.svelte";
 	import type { Menu } from "$lib/types/menu";
 	import type { Database } from "$lib/database.types";
-	import type { TagUpdateEvent } from "$lib/types/tag";
+	import type { TagUpdateEvent, MenuDetailEvents, MenuDetailProps, TabType, TabChangeEvent, MenuVariant } from "./types";
 	import { createEventDispatcher } from "svelte";
 	import { page } from "$app/stores";
 	import { ROUTES } from "$lib/stores/store";
 
-	export let menu: Menu;
-	export let allAllergens: Database["public"]["Tables"]["allergens"]["Row"][];
-	export let allIngredients: Database["public"]["Tables"]["ingredients"]["Row"][];
+	export let menu: MenuDetailProps["menu"];
+	export let allAllergens: MenuDetailProps["allAllergens"];
+	export let allIngredients: MenuDetailProps["allIngredients"];
 
-	const dispatch = createEventDispatcher<{ update: Menu }>();
-	let activeTab = 'basic';
+	const dispatch = createEventDispatcher<MenuDetailEvents>();
+	let activeTab: TabType = 'basic';
 
 	$: if ($page.url.pathname === $ROUTES.ADMIN.MENU.NEW && menu.variants) {
-		menu.variants = menu.variants.map((variant, index) => ({
+		menu.variants = menu.variants.map((variant: MenuVariant, index: number) => ({
 			...variant,
 			variant_number: (index + 1).toString()
 		}));
@@ -25,15 +25,15 @@
 		dispatch("update", menu);
 	}
 
-	function handleAllergensUpdate(event: CustomEvent<TagUpdateEvent>) {
+	function handleAllergensUpdate(event: CustomEvent<TagUpdateEvent>): void {
 		menu = { ...menu, allergens: event.detail.tags };
 	}
 
-	function handleIngredientsUpdate(event: CustomEvent<TagUpdateEvent>) {
+	function handleIngredientsUpdate(event: CustomEvent<TagUpdateEvent>): void {
 		menu = { ...menu, ingredients: event.detail.tags };
 	}
 
-	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>) {
+	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>): void {
 		const updatedVariants = [...menu.variants];
 		updatedVariants[variantIndex] = {
 			...updatedVariants[variantIndex],
@@ -42,7 +42,7 @@
 		menu = { ...menu, variants: updatedVariants };
 	}
 
-	function handleVariantIngredientsUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>) {
+	function handleVariantIngredientsUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>): void {
 		const updatedVariants = [...menu.variants];
 		updatedVariants[variantIndex] = {
 			...updatedVariants[variantIndex],
@@ -51,9 +51,8 @@
 		menu = { ...menu, variants: updatedVariants };
 	}
 
-	function handleTabChange(event: Event) {
-		const target = event.target as HTMLInputElement;
-		activeTab = target.value;
+	function handleTabChange(event: TabChangeEvent): void {
+		activeTab = event.target.value;
 	}
 </script>
 
