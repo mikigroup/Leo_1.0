@@ -31,19 +31,25 @@
 	}
 
 	function handleAllergensUpdate(event: CustomEvent<{ detail: TagUpdateEvent }>): void {
-		if (!menu) return;
-		menu = {
-			...menu,
+		if (!menu?.variants) return;
+		const updatedVariants = [...menu.variants];
+		// Alergeny aktualizujeme přímo ve variantách
+		updatedVariants[0] = {
+			...updatedVariants[0],
 			allergens: event.detail.tags as DbAllergen[]
 		};
+		menu = { ...menu, variants: updatedVariants };
 	}
 
 	function handleIngredientsUpdate(event: CustomEvent<{ detail: TagUpdateEvent }>): void {
-		if (!menu) return;
-		menu = {
-			...menu,
+		if (!menu?.variants) return;
+		const updatedVariants = [...menu.variants];
+		// Ingredience aktualizujeme přímo ve variantách
+		updatedVariants[0] = {
+			...updatedVariants[0],
 			ingredients: event.detail.tags as DbIngredient[]
 		};
+		menu = { ...menu, variants: updatedVariants };
 	}
 
 	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<{ detail: TagUpdateEvent }>): void {
@@ -158,7 +164,7 @@
 					<div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
 						<div class="card-body">
 							<div class="flex justify-between items-center mb-4">
-								<div class="badge badge-lg badge-primary">{variant.variant_number}</div>
+								<div class="badge badge-lg px-5 py-6 bg-slate-400 text-white">{variant.variant_number}</div>
 								<div class="text-sm text-gray-500">Varianta {index + 1} ze {menu.variants.length}</div>
 							</div>
 
