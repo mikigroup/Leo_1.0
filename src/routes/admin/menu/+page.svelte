@@ -94,7 +94,7 @@
 	</div>
 
 	<!-- Filters Card -->
-	<div class="card bg-base-100 shadow-xl mb-6">
+	<div class="card shadow-xl mb-6 bg-gray-300">
 		<div class="card-body">
 			<!-- Search and Filters -->
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -163,11 +163,11 @@
 	<!-- Pagination -->
 	<div class="flex justify-center mt-4">
 		<div class="join">
-			<button class="join-item btn"
+			<button class="join-item btn w-20"
 							disabled={pagination.page === 1}
 							on:click={() => handlePageChange(1)}>«</button>
 
-			<button class="join-item btn"
+			<button class="join-item btn w-24"
 							disabled={pagination.page === 1}
 							on:click={() => handlePageChange(pagination.page - 1)}>‹</button>
 
@@ -182,11 +182,11 @@
 				{/if}
 			{/each}
 
-			<button class="join-item btn"
+			<button class="join-item btn w-24"
 							disabled={pagination.page === pagination.totalPages}
 							on:click={() => handlePageChange(pagination.page + 1)}>›</button>
 
-			<button class="join-item btn"
+			<button class="join-item btn w-20"
 							disabled={pagination.page === pagination.totalPages}
 							on:click={() => handlePageChange(pagination.totalPages)}>»</button>
 		</div>
@@ -194,7 +194,7 @@
 
 
 	<!-- Table -->
-	<div class="card bg-base-100 shadow-xl overflow-x-auto">
+	<div class="card bg-base-100 shadow-xl overflow-x-auto bg-gray-200">
 		<div class="card-body p-0">
 			<table class="table table-zebra">
 				<thead>
@@ -261,6 +261,4 @@
 			{/if}
 		</div>
 	</div>
-
-
 </div>

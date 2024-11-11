@@ -26,5 +26,5 @@ export const ROUTES_STORE = {
 		CONTACT: "/kontakt",
 		LOGIN: "/login",
 		SIGNUP: "/signup"
-	}
+	},
 } as const;
