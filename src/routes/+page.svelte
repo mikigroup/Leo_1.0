@@ -115,8 +115,6 @@
 	</div>
 </section>
 
-
-
 <section class="py-40 argumenty">
 	<div class="max-w-screen-2xl px-4 mx-auto sm:px-6 lg:px-8">
 		<div class="text-center">

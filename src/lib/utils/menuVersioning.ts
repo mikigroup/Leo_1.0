@@ -1,9 +1,15 @@
-import type { MenuVersion, VersionChange, ChangeType } from '$lib/types/menu';
+import type {
+	MenuVersion,
+	VersionChange,
+	ChangeType,
+	MenuVersionField
+} from '$lib/types/menu';
 
 export function compareVersions(oldVersion: MenuVersion, newVersion: MenuVersion): VersionChange[] {
 	const changes: VersionChange[] = [];
 
-	const compareFields: (keyof MenuVersion)[] = ['soup', 'active', 'notes', 'type', 'nutri'];
+	// Definujeme pole jako MenuVersionField[]
+	const compareFields: MenuVersionField[] = ['soup', 'active', 'notes', 'type', 'nutri'];
 
 	for (const field of compareFields) {
 		if (oldVersion[field] !== newVersion[field]) {

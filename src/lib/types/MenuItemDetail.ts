@@ -1,19 +1,19 @@
 import type { Database } from '$lib/database.types';
-import type { Menu, MenuVariant } from '$lib/types/menu';
+import type { MenuWithRelations } from '$lib/types/menu';
 
 type DbAllergen = Database['public']['Tables']['allergens']['Row'];
 type DbIngredient = Database['public']['Tables']['ingredients']['Row'];
 
 // Props interface pro MenuItemDetail
 export interface MenuDetailProps {
-	menu: Menu;
+	menu: MenuWithRelations;
 	allAllergens: DbAllergen[];
 	allIngredients: DbIngredient[];
 }
 
 // Event interface pro dispatch
 export interface MenuDetailEvents {
-	update: Menu;
+	update: MenuWithRelations;
 }
 
 // Tag update event interface
