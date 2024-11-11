@@ -1,68 +1,59 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
-	import type { Tag, TagType, TagUpdateEvent } from "$lib/types/tag";
+	import type { Allergen, Ingredient, TagType, TagUpdateEvent } from "$lib/types/menu";
 
-	// Component props with improved typing
-	export let selectedTags: Tag[] = [];
-	export let availableTags: Tag[] = [];
+	// Props s přesnými typy
+	export let selectedTags: (Allergen | Ingredient)[] = [];
+	export let availableTags: (Allergen | Ingredient)[] = [];
 	export let type: TagType;
 
-	// Ensure arrays are initialized with proper typing
+	// Event dispatcher s konkrétním typem
+	const dispatch = createEventDispatcher<{
+		update: TagUpdateEvent;
+	}>();
+
+	// State
+	let inputValue = "";
+	let filteredTags: (Allergen | Ingredient)[] = [];
+
+	// Zajištění inicializace polí
 	$: {
 		selectedTags = Array.isArray(selectedTags) ? selectedTags : [];
 		availableTags = Array.isArray(availableTags) ? availableTags : [];
 	}
 
-	// Create event dispatcher with proper typing
-	const dispatch = createEventDispatcher<{
-		update: TagUpdateEvent;
-	}>();
-
-	// State for input and filtered tags
-	let inputValue = "";
-	let filteredTags: Tag[] = [];
-
-	// Reactive statement to filter available tags based on input
+	// Filtrování tagů
 	$: {
-		if (Array.isArray(availableTags) && Array.isArray(selectedTags)) {
-			filteredTags = availableTags.filter(
-				(tag): tag is Tag =>
-					// Type guard to ensure tag is valid
-					tag !== null &&
-					tag !== undefined &&
-					typeof tag.name === 'string' &&
-					// Filter tags that include the input value (case-insensitive)
-					tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
-					// Exclude tags that are already selected
-					!selectedTags.some((selected) => selected?.id === tag?.id)
-			);
-		} else {
-			filteredTags = [];
-		}
+		filteredTags = availableTags.filter(tag =>
+			tag &&
+			tag.name &&
+			tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
+			!selectedTags.some(selected => selected.id === tag.id)
+		);
 	}
 
-	// Add a tag to the selected tags
-	function addTag(tag: Tag) {
+	function addTag(tag: Allergen | Ingredient) {
 		if (!tag?.id || !tag?.name) return;
 
-		// Check if the tag is not already in the selected tags
-		if (!selectedTags.some((selected) => selected?.id === tag.id)) {
-			// Create a new array with the new tag added (to trigger reactivity)
+		if (!selectedTags.some(selected => selected.id === tag.id)) {
 			selectedTags = [...selectedTags, tag];
-			// Dispatch the update event with the new selectedTags array and type
-			dispatch("update", { tags: selectedTags, type });
+			dispatch("update", {
+				tags: selectedTags,
+				type
+			});
 		}
-		// Clear the input value after adding a tag
+
 		inputValue = "";
 	}
 
-	// Remove a tag from the selected tags
-	function removeTag(tag: Tag) {
-		selectedTags = selectedTags.filter((t) => t.id !== tag.id);
-		dispatch("update", { tags: selectedTags, type });
+	function removeTag(tag: Allergen | Ingredient) {
+		selectedTags = selectedTags.filter(t => t.id !== tag.id);
+		dispatch("update", {
+			tags: selectedTags,
+			type
+		});
 	}
 
-	// Handle keydown event for adding tags
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === "Enter" && inputValue && filteredTags.length > 0) {
 			event.preventDefault();
@@ -76,7 +67,11 @@
 		{#each selectedTags as tag (tag.id)}
       <span class="tag">
         {tag.name}
-				<button type="button" on:click={() => removeTag(tag)} class="tag-remove" aria-label="Odstranit tag">
+				<button
+					type="button"
+					on:click={() => removeTag(tag)}
+					class="tag-remove"
+					aria-label="Odstranit tag">
           &times;
         </button>
       </span>
@@ -94,7 +89,12 @@
 	{#if inputValue && filteredTags.length > 0}
 		<ul class="tag-suggestions">
 			{#each filteredTags as tag (tag.id)}
-				<li on:click={() => addTag(tag)} on:keydown={(e) => e.key === 'Enter' && addTag(tag)} tabindex="0" role="button">
+				<li
+					on:click={() => addTag(tag)}
+					on:keydown={(e) => e.key === 'Enter' && addTag(tag)}
+					tabindex="0"
+					role="button"
+				>
 					{tag.name}
 				</li>
 			{/each}

@@ -1,26 +1,27 @@
 <script lang="ts">
 	import TagSelector from "./TagSelector.svelte";
-	import type { Menu, MenuVariant } from "$lib/types/menu";
 	import type {
 		MenuDetailEvents,
-		MenuDetailProps,
 		TabType,
 		TabChangeEvent,
-		TagUpdateEvent
-	} from "$lib/types/MenuItemDetail";
+		TagUpdateEvent,
+		Allergen,
+		Ingredient,
+		MenuWithRelations
+	} from "$lib/types/menu";
 	import { createEventDispatcher } from "svelte";
 	import { page } from "$app/stores";
 	import { ROUTES } from "$lib/stores/store";
 
-	export let menu: MenuDetailProps["menu"];
-	export let allAllergens: MenuDetailProps["allAllergens"];
-	export let allIngredients: MenuDetailProps["allIngredients"];
+	export let menu: MenuWithRelations;
+	export let allAllergens: Allergen[];
+	export let allIngredients: Ingredient[];
 
 	const dispatch = createEventDispatcher<MenuDetailEvents>();
 	let activeTab: TabType = 'basic';
 
 	$: if ($page.url.pathname === $ROUTES.ADMIN.MENU.NEW && menu.variants) {
-		menu.variants = menu.variants.map((variant: MenuVariant, index: number) => ({
+		menu.variants = menu.variants.map((variant, index) => ({
 			...variant,
 			variant_number: (index + 1).toString()
 		}));
@@ -30,44 +31,38 @@
 		dispatch("update", menu);
 	}
 
-	function handleAllergensUpdate(event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+	function handleAllergensUpdate(event: CustomEvent<TagUpdateEvent>): void {
 		if (!menu?.variants) return;
-		const updatedVariants = [...menu.variants];
-		// Alergeny aktualizujeme přímo ve variantách
-		updatedVariants[0] = {
-			...updatedVariants[0],
-			allergens: event.detail.tags as DbAllergen[]
+		menu = {
+			...menu,
+			allergens: event.detail.tags as Allergen[]
 		};
-		menu = { ...menu, variants: updatedVariants };
 	}
 
-	function handleIngredientsUpdate(event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+	function handleIngredientsUpdate(event: CustomEvent<TagUpdateEvent>): void {
 		if (!menu?.variants) return;
-		const updatedVariants = [...menu.variants];
-		// Ingredience aktualizujeme přímo ve variantách
-		updatedVariants[0] = {
-			...updatedVariants[0],
-			ingredients: event.detail.tags as DbIngredient[]
+		menu = {
+			...menu,
+			ingredients: event.detail.tags as Ingredient[]
 		};
-		menu = { ...menu, variants: updatedVariants };
 	}
 
-	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+	function handleVariantAllergensUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>): void {
 		if (!menu?.variants) return;
 		const updatedVariants = [...menu.variants];
 		updatedVariants[variantIndex] = {
 			...updatedVariants[variantIndex],
-			allergens: event.detail.tags as DbAllergen[]
+			allergens: event.detail.tags as Allergen[]
 		};
 		menu = { ...menu, variants: updatedVariants };
 	}
 
-	function handleVariantIngredientsUpdate(variantIndex: number, event: CustomEvent<{ detail: TagUpdateEvent }>): void {
+	function handleVariantIngredientsUpdate(variantIndex: number, event: CustomEvent<TagUpdateEvent>): void {
 		if (!menu?.variants) return;
 		const updatedVariants = [...menu.variants];
 		updatedVariants[variantIndex] = {
 			...updatedVariants[variantIndex],
-			ingredients: event.detail.tags as DbIngredient[]
+			ingredients: event.detail.tags as Ingredient[]
 		};
 		menu = { ...menu, variants: updatedVariants };
 	}
@@ -76,24 +71,23 @@
 		activeTab = event.target.value;
 	}
 </script>
-
 <div class="container mx-auto">
 	<div role="tablist" class="tabs tabs-lifted">
 		<input
 			type="radio"
 			name="menu_tabs"
 			role="tab"
-			class="tab"
+			class="tab text-nowrap"
 			value="basic"
 			checked={activeTab === 'basic'}
 			aria-label="Základní info"
 			on:change={handleTabChange}
 		/>
-		<div role="tabpanel" class="tab-content bg-base-100 border-base-300 rounded-box p-6">
+		<div role="tabpanel" class="tab-content bg-base-100 rounded-box p-6 border">
 			<!-- Basic Info Content -->
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 				<div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-					<div class="card-body">
+					<div class="card-body border rounded-2xl">
 						<h3 class="card-title mb-4">Základní údaje</h3>
 						<div class="grid grid-cols-2 gap-4">
 							<div class="form-control w-full">
@@ -119,7 +113,7 @@
 				</div>
 
 				<div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-					<div class="card-body">
+					<div class="card-body border rounded-2xl">
 						<h3 class="card-title mb-4">Polévka</h3>
 						<div class="form-control w-full">
 							<input
@@ -151,7 +145,7 @@
 			type="radio"
 			name="menu_tabs"
 			role="tab"
-			class="tab"
+			class="tab text-nowrap"
 			value="variants"
 			checked={activeTab === 'variants'}
 			aria-label="Varianty menu"
@@ -162,7 +156,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
 				{#each menu.variants as variant, index}
 					<div class="card bg-base-100 shadow-xl hover:shadow-2xl transition-shadow">
-						<div class="card-body">
+						<div class="card-body border rounded-2xl">
 							<div class="flex justify-between items-center mb-4">
 								<div class="badge badge-lg px-5 py-6 bg-slate-400 text-white">{variant.variant_number}</div>
 								<div class="text-sm text-gray-500">Varianta {index + 1} ze {menu.variants.length}</div>
@@ -173,7 +167,6 @@
 									<label class="label font-medium">Popis</label>
 									<textarea
 										class="textarea textarea-bordered w-full h-24 focus:outline-none focus:border-primary"
-										placeholder="Popis varianty"
 										bind:value={variant.description}
 									/>
 								</div>
@@ -217,7 +210,7 @@
 			type="radio"
 			name="menu_tabs"
 			role="tab"
-			class="tab"
+			class="tab text-nowrap"
 			value="additional"
 			checked={activeTab === 'additional'}
 			aria-label="Další informace"
@@ -233,7 +226,6 @@
 							<input
 								type="text"
 								class="input input-bordered focus:outline-none focus:border-primary"
-								placeholder="Nutriční hodnoty"
 								bind:value={menu.nutri}
 							/>
 						</div>
@@ -243,7 +235,6 @@
 							<input
 								type="text"
 								class="input input-bordered focus:outline-none focus:border-primary"
-								placeholder="Typ jídla"
 								bind:value={menu.type}
 							/>
 						</div>
@@ -252,7 +243,6 @@
 							<label class="label font-medium">Poznámky</label>
 							<textarea
 								class="textarea textarea-bordered h-32 focus:outline-none focus:border-primary"
-								placeholder="Další poznámky k menu"
 								bind:value={menu.notes}
 							/>
 						</div>

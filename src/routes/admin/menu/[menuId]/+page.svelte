@@ -139,7 +139,7 @@
 	}
 </script>
 
-<div class="relative p-5 overflow-x-auto shadow-md sm:rounded-lg border border-zinc-200"
+<div class="relative p-5 overflow-x-auto"
 		 in:fly={{ y: 50, duration: 500 }}>
 	<div class="flex justify-between items-center mb-4">
 		<button

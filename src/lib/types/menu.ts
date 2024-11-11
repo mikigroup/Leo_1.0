@@ -7,24 +7,35 @@ type BaseMenuVersion = Database["public"]["Tables"]["menu_versions"]["Row"];
 type BaseAllergen = Database["public"]["Tables"]["allergens"]["Row"];
 type BaseIngredient = Database["public"]["Tables"]["ingredients"]["Row"];
 
-// Rozšířený typ pro alergeny a ingredience
+// Základní rozhraní pro tagy
+export interface BaseTag {
+	id: number;
+	name: string;
+	created_at?: string | null;
+	updated_at?: string | null;
+}
+
+// Definice typů pro alergeny a ingredience
+export interface Allergen extends BaseTag {}
+export interface Ingredient extends BaseTag {}
+
+// Rozšířený typ pro relace alergenů a ingrediencí
 export interface AllergenRelation {
-	allergen: BaseAllergen;
+	allergen: Allergen;
 }
 
 export interface IngredientRelation {
-	ingredient: BaseIngredient;
+	ingredient: Ingredient;
 }
 
 // Rozšířený typ pro varianty s alergeny a ingrediencemi
-// Opraveno: použijeme intersection type místo extends
 export type MenuVariantWithRelations = MenuVariant & {
-	allergens: AllergenRelation[];
-	ingredients: IngredientRelation[];
+	allergens: Allergen[];
+	ingredients: Ingredient[];
 	menu_version_id?: string | null;
 };
 
-// Typy pro změny verzí
+// Typy pro verzování a změny
 export type ChangeType = 'added' | 'removed' | 'modified';
 export type MenuVersionField = 'soup' | 'active' | 'notes' | 'type' | 'nutri';
 
@@ -56,6 +67,8 @@ export interface MenuVersionWithChanges extends MenuVersion {
 // Rozšířený typ pro menu s relacemi
 export type MenuWithRelations = Menu & {
 	variants: MenuVariantWithRelations[];
+	allergens: Allergen[];
+	ingredients: Ingredient[];
 	currentVersion: MenuVersionWithChanges[] | null;
 	allVersions: MenuVersion[];
 };
@@ -94,8 +107,8 @@ export interface MenuLoadData {
 // Typy pro komponenty
 export interface MenuDetailProps {
 	menu: MenuWithRelations;
-	allAllergens: BaseAllergen[];
-	allIngredients: BaseIngredient[];
+	allAllergens: Allergen[];
+	allIngredients: Ingredient[];
 }
 
 export interface MenuDetailEvents {
@@ -111,6 +124,14 @@ export interface TabChangeEvent extends Event {
 }
 
 export interface TagUpdateEvent {
-	tags: BaseAllergen[] | BaseIngredient[];
+	tags: Allergen[] | Ingredient[];
 	type: 'allergen' | 'ingredient';
+}
+
+// Helper types pro práci s tagy
+export type TagType = 'allergen' | 'ingredient';
+
+export interface TagSelectionEvent {
+	type: TagType;
+	tags: Allergen[] | Ingredient[];
 }

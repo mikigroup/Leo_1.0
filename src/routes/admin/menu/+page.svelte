@@ -194,7 +194,7 @@
 
 
 	<!-- Table -->
-	<div class="card bg-base-100 shadow-xl overflow-x-auto bg-gray-200">
+	<div class="card shadow-xl overflow-x-auto bg-gray-200">
 		<div class="card-body p-0">
 			<table class="table table-zebra">
 				<thead>
