@@ -1,34 +1,36 @@
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
-import type { Menu, MenuVersion } from "$lib/types/menu";
 import { compareVersions } from "$lib/utils/menuVersioning";
+import type {
+	MenuWithRelations,
+	MenuResponse,
+	MenuLoadData,
+	MenuVersionWithChanges
+} from "$lib/types/menu";
 
-export const load: PageServerLoad = async ({ locals: { supabase }, url }) => {
+export const load = (async ({ locals: { supabase }, url }) => {
 	try {
-		// Parametry pro filtrování a stránkování
 		const page = parseInt(url.searchParams.get("page") || "1");
 		const itemsPerPage = 10;
 		const searchQuery = url.searchParams.get("search") || "";
 		const filterDate = url.searchParams.get("date") || "";
 		const filterActive = url.searchParams.get("active") || "";
 
-		// Načítáme menu s verzemi a variantami
 		let query = supabase
 			.from('menus')
 			.select(`
-                *,
-                variants:menu_variants(
-                    *,
-                    allergens:variant_allergens(allergen:allergens(*)),
-                    ingredients:variant_ingredients(ingredient:ingredients(*))
-                ),
-                currentVersion:menu_versions(*)!inner(valid_to is null),
-                allVersions:menu_versions(*),
-                count: count(*) over()
-            `, { count: 'exact' })
+        *,
+        variants:menu_variants(
+          *,
+          allergens:variant_allergens(allergen:allergens(*)),
+          ingredients:variant_ingredients(ingredient:ingredients(*))
+        ),
+        currentVersion:menu_versions!current_version(*),
+        allVersions:menu_versions(*),
+        count: count(*) over()
+      `, { count: 'exact' })
 			.eq('deleted', false);
 
-		// Aplikace filtrů
 		if (searchQuery) {
 			query = query.or(`soup.ilike.%${searchQuery}%,variants.description.ilike.%${searchQuery}%`);
 		}
@@ -41,39 +43,40 @@ export const load: PageServerLoad = async ({ locals: { supabase }, url }) => {
 			query = query.eq('active', filterActive === 'true');
 		}
 
-		// Stránkování
 		const from = (page - 1) * itemsPerPage;
 		const to = from + itemsPerPage - 1;
 
 		const { data: menus, error: menusError, count } = await query
 			.order('date', { ascending: false })
-			.range(from, to);
+			.range(from, to) as MenuResponse;
 
 		if (menusError) {
 			console.error('Error loading menus:', menusError);
 			throw error(500, 'Chyba při načítání menu');
 		}
 
-		// Přidáme informace o změnách
 		const menusWithChanges = menus.map(menu => {
 			if (menu.allVersions?.length > 1) {
 				const changes = compareVersions(
-					menu.allVersions[1], // předchozí verze
-					menu.allVersions[0]  // aktuální verze
+					menu.allVersions[1],
+					menu.allVersions[0]
 				);
 
 				return {
 					...menu,
-					currentVersion: menu.currentVersion ? {
-						...menu.currentVersion,
+					currentVersion: menu.currentVersion?.[0] ? {
+						...menu.currentVersion[0],
 						changes
 					} : null
 				};
 			}
-			return menu;
+			return {
+				...menu,
+				currentVersion: menu.currentVersion?.[0] || null
+			};
 		});
 
-		return {
+		const result: MenuLoadData = {
 			menus: menusWithChanges,
 			pagination: {
 				page,
@@ -87,8 +90,10 @@ export const load: PageServerLoad = async ({ locals: { supabase }, url }) => {
 				active: filterActive
 			}
 		};
+
+		return result;
 	} catch (err) {
 		console.error('Unexpected error in load function:', err);
 		throw error(500, 'Chyba při načítání dat');
 	}
-};
+}) satisfies PageServerLoad;

@@ -14,7 +14,6 @@
 	export let isPaid = false;
 
 	// Fakturační údaje
-
 	export let customer_email = "";
 	export let customer_first_name = "";
 	export let customer_last_name = "";
@@ -202,7 +201,7 @@
 			<div class="collapse">
 				<input type="checkbox" />
 				<div class="collapse-title text-lg font-medium">
-					Další fakturační údaje
+					Další
 				</div>
 				<div class="collapse-content">
 					<div class="form-control w-full mb-2">

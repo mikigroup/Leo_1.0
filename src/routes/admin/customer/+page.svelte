@@ -184,6 +184,13 @@
 			loading = false;
 		}
 	}
+
+	$: startIndex = ((pagination?.page || 1) - 1) * (pagination?.itemsPerPage || 10) + 1;
+	$: endIndex = Math.min(
+		(pagination?.page || 1) * (pagination?.itemsPerPage || 10),
+		pagination?.totalItems || 0
+	);
+	$: totalCount = pagination?.totalItems || 0;
 </script>
 
 <svelte:head>
@@ -219,29 +226,39 @@
 
 <hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
 
-<section>
-	<div class="join grid grid-cols-2 w-1/2 mx-auto my-10">
-		<button
-			class="join-item btn btn-outline"
-			on:click={previousPage}
-			disabled={currentPage === 1}>
-			Předchozí stránka
-		</button>
-		<button
-			class="join-item btn btn-outline"
-			on:click={nextPage}
-			disabled={currentPage === totalPages}>
-			Další stránka
-		</button>
-	</div>
+<!-- Pagination -->
+<div class="flex justify-center mt-4">
+	<div class="join">
+		<button class="join-item btn w-20"
+						disabled={pagination.page === 1}
+						on:click={() => handlePageChange(1)}>«</button>
 
-	<div
-		class="flex flex-col md:flex-row justify-between items-center w-full my-4">
-		<p>Celkový počet zákazníků: {totalItems}</p>
-		<p>Stránka {currentPage} z {totalPages}</p>
-		<p>Zobrazeno {itemsOnCurrentPage} z {totalItems} zákazníků</p>
+		<button class="join-item btn w-24"
+						disabled={pagination.page === 1}
+						on:click={() => handlePageChange(pagination.page - 1)}>‹</button>
+
+		{#each Array(pagination.totalPages) as _, i}
+			{#if i + 1 === 1 || i + 1 === pagination.totalPages ||
+			(i + 1 >= pagination.page - 1 && i + 1 <= pagination.page + 1)}
+				<button class="join-item btn"
+								class:btn-active={pagination.page === i + 1}
+								on:click={() => handlePageChange(i + 1)}>{i + 1}</button>
+			{:else if i + 1 === pagination.page - 2 || i + 1 === pagination.page + 2}
+				<button class="join-item btn btn-disabled">...</button>
+			{/if}
+		{/each}
+
+		<button class="join-item btn w-24"
+						disabled={pagination.page === pagination.totalPages}
+						on:click={() => handlePageChange(pagination.page + 1)}>›</button>
+
+		<button class="join-item btn w-20"
+						disabled={pagination.page === pagination.totalPages}
+						on:click={() => handlePageChange(pagination.totalPages)}>»</button>
 	</div>
-</section>
+</div>
+
+
 <section id="page-top">
 	<div class="flex justify-end dropdown">
 		<button class="btn btn-outline" tabindex="0">Sloupce</button>

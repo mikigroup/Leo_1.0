@@ -1,18 +1,23 @@
-import type { MenuVersion, VersionChange } from '$lib/types/menu';
+import type { MenuVersion, VersionChange, ChangeType } from '$lib/types/menu';
 
 export function compareVersions(oldVersion: MenuVersion, newVersion: MenuVersion): VersionChange[] {
 	const changes: VersionChange[] = [];
 
-	const compareFields = ['soup', 'active', 'notes', 'type', 'nutri'];
+	const compareFields: (keyof MenuVersion)[] = ['soup', 'active', 'notes', 'type', 'nutri'];
 
 	for (const field of compareFields) {
 		if (oldVersion[field] !== newVersion[field]) {
+			const type: ChangeType = !oldVersion[field]
+				? 'added'
+				: !newVersion[field]
+					? 'removed'
+					: 'modified';
+
 			changes.push({
 				fieldName: field,
 				oldValue: oldVersion[field],
 				newValue: newVersion[field],
-				type: !oldVersion[field] ? 'added' :
-					!newVersion[field] ? 'removed' : 'modified'
+				type
 			});
 		}
 	}

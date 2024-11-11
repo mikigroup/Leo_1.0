@@ -1,34 +1,96 @@
-import type { Database } from '$lib/database.types';
+import type { Database } from "$lib/database.types";
 
-type DbMenu = Database['public']['Tables']['menus']['Row'];
-type DbMenuVersion = Database['public']['Tables']['menu_versions']['Row'];
-type DbMenuVariant = Database['public']['Tables']['menu_variants']['Row'];
-type DbAllergen = Database['public']['Tables']['allergens']['Row'];
-type DbIngredient = Database['public']['Tables']['ingredients']['Row'];
+// Základní typy z databáze
+type BaseMenu = Database["public"]["Tables"]["menus"]["Row"];
+type BaseMenuVariant = Database["public"]["Tables"]["menu_variants"]["Row"];
+type BaseMenuVersion = Database["public"]["Tables"]["menu_versions"]["Row"];
+type BaseAllergen = Database["public"]["Tables"]["allergens"]["Row"];
+type BaseIngredient = Database["public"]["Tables"]["ingredients"]["Row"];
 
-export interface MenuVersion extends DbMenuVersion {
-	changes?: {
-		added?: string[];
-		removed?: string[];
-		modified?: string[];
-	};
-	status?: 'active' | 'archived';
-}
-
-export interface MenuVariant extends DbMenuVariant {
-	allergens: DbAllergen[];
-	ingredients: DbIngredient[];
-}
-
-export interface Menu extends DbMenu {
-	currentVersion?: MenuVersion;
-	allVersions?: MenuVersion[];
-	variants: MenuVariant[];
-}
+export type ChangeType = 'added' | 'removed' | 'modified';
 
 export interface VersionChange {
 	fieldName: string;
 	oldValue: any;
 	newValue: any;
-	type: 'added' | 'removed' | 'modified';
+	type: ChangeType;
+}
+
+// Rozšířený typ pro verze
+export interface MenuVersion extends BaseMenuVersion {
+	soup: string | null;
+	active: boolean | null;
+	notes: string | null;
+	type: string | null;
+	nutri: string | null;
+	[key: string]: any; // Pro dynamický přístup k polím
+}
+
+// Rozšířený typ pro verze s možnými změnami
+export interface MenuVersionWithChanges extends MenuVersion {
+	changes?: VersionChange[];
+}
+
+// Export dalších typů...
+export interface MenuWithRelations extends BaseMenu {
+	variants: MenuVariantWithRelations[];
+	currentVersion: MenuVersionWithChanges[];
+	allVersions: MenuVersion[];
+}
+
+// Rozšířený typ pro varianty s alergeny a ingrediencemi
+export interface MenuVariantWithRelations extends BaseMenuVariant {
+	allergens: {
+		allergen: BaseAllergen;
+	}[];
+	ingredients: {
+		ingredient: BaseIngredient;
+	}[];
+}
+
+// Rozšířený typ pro verze s možnými změnami
+export interface MenuVersionWithChanges extends BaseMenuVersion {
+	changes?: {
+		field: string;
+		oldValue: any;
+		newValue: any;
+	}[];
+}
+
+// Hlavní typ pro menu s relacemi
+export interface MenuWithRelations extends BaseMenu {
+	variants: MenuVariantWithRelations[];
+	currentVersion: MenuVersionWithChanges[];
+	allVersions: BaseMenuVersion[];
+}
+
+// Typ pro response z DB včetně počtu
+export interface MenuResponse {
+	data: MenuWithRelations[];
+	count: number | null;
+	error: any;
+}
+
+// Typ pro pagination
+export interface PaginationData {
+	page: number;
+	totalPages: number;
+	totalItems: number | null;
+	itemsPerPage: number;
+}
+
+// Typ pro filtry
+export interface MenuFilters {
+	search: string;
+	date: string;
+	active: string;
+}
+
+// Kompletní návratový typ pro load funkci
+export interface MenuLoadData {
+	menus: (MenuWithRelations & {
+		currentVersion: MenuVersionWithChanges | null;
+	})[];
+	pagination: PaginationData;
+	filters: MenuFilters;
 }
