@@ -9,7 +9,6 @@
 	import { ROUTES } from "$lib/stores/store";
 
 	export let data;
-
 	let {
 		supabase,
 		session,
@@ -19,7 +18,8 @@
 		totalPages,
 		totalItems,
 		itemsOnCurrentPage,
-		searchQuery
+		searchQuery,
+		pagination
 	} = data;
 	$: ({
 		supabase,
@@ -30,7 +30,8 @@
 		totalPages,
 		totalItems,
 		itemsOnCurrentPage,
-		searchQuery
+		searchQuery,
+		pagination
 	} = data);
 
 	// State variables
@@ -52,6 +53,8 @@
 	};
 
 	const columnOrder: string[] = Object.keys(columnNames);
+	const pageSizeOptions = [5, 10, 20, 50];
+	let currentPageSize = pagination.itemsPerPage;
 
 	// Visible columns management
 	let visibleColumns: Record<string, boolean> =
@@ -134,7 +137,7 @@
 
 	// Helper function: Format date to Czech format
 	function formatDateToCzech(date: string) {
-		if (!date) return ""; //
+		if (!date) return "";
 		const dateObj = new Date(date);
 		const day = dateObj.getDate().toString().padStart(2, "0");
 		const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
@@ -144,45 +147,47 @@
 		return `${day}.${month}.${year} ${hours}:${minutes}`;
 	}
 
-	// Navigation functions
-	async function previousPage() {
-		try {
-			loading = true;
-			if (currentPage > 1) {
-				transitionKey++; // Inkrementujeme klíč pro novou animaci
-				await goto(`?page=${currentPage - 1}`);
-			}
-		} catch (error) {
-			console.error("Chyba při načítání předchozí stránky:", error);
-		} finally {
-			loading = false;
-		}
+	function handlePageChange(newPage: number) {
+		if (newPage < 1 || newPage > pagination.totalPages) return;
+		updateUrlAndRefresh({ page: newPage.toString() });
 	}
 
-	async function nextPage() {
-		try {
-			loading = true;
-			if (currentPage < totalPages) {
-				transitionKey++; // Inkrementujeme klíč pro novou animaci
-				await goto(`?page=${currentPage + 1}`);
-			}
-		} catch (error) {
-			console.error("Chyba při načítání další stránky:", error);
-		} finally {
-			loading = false;
-		}
+	function handlePageSizeChange() {
+		updateUrlAndRefresh({
+			pageSize: currentPageSize.toString(),
+			page: "1"
+		});
 	}
 
-	// Search function
-	async function handleSearch() {
+	function handleSearch() {
 		loading = true;
 		try {
-			await goto(`?search=${searchInput}&page=1`);
+			updateUrlAndRefresh({
+				search: searchInput,
+				page: "1"
+			});
 		} catch (error) {
 			console.error("Chyba při vyhledávání:", error);
 		} finally {
 			loading = false;
 		}
+	}
+
+	function clearFilters() {
+		searchInput = "";
+		handleSearch();
+	}
+
+	function updateUrlAndRefresh(params: Record<string, string>) {
+		const url = new URL(window.location.href);
+		Object.entries(params).forEach(([key, value]) => {
+			if (value) {
+				url.searchParams.set(key, value);
+			} else {
+				url.searchParams.delete(key);
+			}
+		});
+		goto(url.toString());
 	}
 
 	$: startIndex = ((pagination?.page || 1) - 1) * (pagination?.itemsPerPage || 10) + 1;
@@ -197,160 +202,158 @@
 	<title>LEO - Zákazníci</title>
 </svelte:head>
 
-<section>
-	<div class="flex">
-		<div class="flex flex-col gap-2 md:flex-row items-center">
-			<div>
-				<button
-					on:click={() => goto($ROUTES.ADMIN.CUSTOMER.NEW)}
-					class="invisible w-full p-4 px-5 btn btn-outline">
-					Vytvořit zákazníka
-				</button>
+<div class="p-4">
+	<!-- Header -->
+	<div class="flex justify-between items-center mb-6">
+		<h1 class="text-2xl font-bold">Seznam zákazníků</h1>
+	</div>
+
+	<!-- Filters Card -->
+	<div class="card shadow-xl mb-6 bg-gray-300">
+		<div class="card-body">
+			<!-- Search and Filters -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+				<div class="form-control">
+					<label class="label">Vyhledávání</label>
+					<input
+						type="text"
+						bind:value={searchInput}
+						placeholder="Hledat zákazníka..."
+						class="input input-bordered"
+					/>
+				</div>
 			</div>
-			<div class="flex gap-4">
-				<input
-					type="text"
-					placeholder="Hledat..."
-					class="input input-bordered input-md w-full max-w-xs border-black pr-10"
-					bind:value={searchInput} />
-				<button
-					class="btn btn-outline"
-					on:click={handleSearch}
-					disabled={loading}>
-					{loading ? "Vyhledávám..." : "Vyhledat"}
-				</button>
+
+			<!-- Actions -->
+			<div class="flex flex-wrap justify-between items-center gap-4">
+				<div class="join">
+					<button class="btn btn-outline join-item" on:click={handleSearch}>
+						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+						</svg>
+						Vyhledat
+					</button>
+					<button class="btn btn-outline join-item" on:click={clearFilters}>Vyčistit</button>
+				</div>
+
+				<div class="join">
+					<select
+						bind:value={currentPageSize}
+						on:change={handlePageSizeChange}
+						class="select select-bordered join-item">
+						{#each pageSizeOptions as size}
+							<option value={size}>{size} na stránku</option>
+						{/each}
+					</select>
+
+					<div class="dropdown dropdown-end">
+						<button tabindex="0" class="btn join-item">Sloupce</button>
+						<ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+							{#each columnOrder as column}
+								<li>
+									<label class="label cursor-pointer">
+										<span class="label-text">{columnNames[column]}</span>
+										<input
+											type="checkbox"
+											class="checkbox"
+											checked={$visibleColumnsStore[column]}
+											on:change={() => toggleColumn(column)}
+										/>
+									</label>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				</div>
 			</div>
 		</div>
 	</div>
-</section>
 
-<hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
+	<!-- Pagination -->
+	<div class="flex justify-center mt-4">
+		<div class="join">
+			<button
+				class="join-item btn w-20"
+				disabled={pagination.page === 1}
+				on:click={() => handlePageChange(1)}>«</button>
 
-<!-- Pagination -->
-<div class="flex justify-center mt-4">
-	<div class="join">
-		<button class="join-item btn w-20"
-						disabled={pagination.page === 1}
-						on:click={() => handlePageChange(1)}>«</button>
+			<button
+				class="join-item btn w-24"
+				disabled={pagination.page === 1}
+				on:click={() => handlePageChange(pagination.page - 1)}>‹</button>
 
-		<button class="join-item btn w-24"
-						disabled={pagination.page === 1}
-						on:click={() => handlePageChange(pagination.page - 1)}>‹</button>
+			{#each Array(pagination.totalPages) as _, i}
+				{#if i + 1 === 1 || i + 1 === pagination.totalPages ||
+				(i + 1 >= pagination.page - 1 && i + 1 <= pagination.page + 1)}
+					<button
+						class="join-item btn"
+						class:btn-active={pagination.page === i + 1}
+						on:click={() => handlePageChange(i + 1)}>{i + 1}</button>
+				{:else if i + 1 === pagination.page - 2 || i + 1 === pagination.page + 2}
+					<button class="join-item btn btn-disabled">...</button>
+				{/if}
+			{/each}
 
-		{#each Array(pagination.totalPages) as _, i}
-			{#if i + 1 === 1 || i + 1 === pagination.totalPages ||
-			(i + 1 >= pagination.page - 1 && i + 1 <= pagination.page + 1)}
-				<button class="join-item btn"
-								class:btn-active={pagination.page === i + 1}
-								on:click={() => handlePageChange(i + 1)}>{i + 1}</button>
-			{:else if i + 1 === pagination.page - 2 || i + 1 === pagination.page + 2}
-				<button class="join-item btn btn-disabled">...</button>
-			{/if}
-		{/each}
+			<button
+				class="join-item btn w-24"
+				disabled={pagination.page === pagination.totalPages}
+				on:click={() => handlePageChange(pagination.page + 1)}>›</button>
 
-		<button class="join-item btn w-24"
-						disabled={pagination.page === pagination.totalPages}
-						on:click={() => handlePageChange(pagination.page + 1)}>›</button>
+			<button
+				class="join-item btn w-20"
+				disabled={pagination.page === pagination.totalPages}
+				on:click={() => handlePageChange(pagination.totalPages)}>»</button>
+		</div>
+	</div>
 
-		<button class="join-item btn w-20"
-						disabled={pagination.page === pagination.totalPages}
-						on:click={() => handlePageChange(pagination.totalPages)}>»</button>
+	<!-- Table -->
+	<div class="card shadow-xl overflow-x-auto bg-gray-200">
+		{#key transitionKey}
+			<div class="card-body p-0" in:fade={{ duration: 300 }} out:fade={{ duration: 300 }}>
+				{#if $navigating || loading}
+					<div class="flex justify-center py-8">
+						<BarLoader size="120" color="black" unit="px" duration="1s" />
+					</div>
+				{:else if filteredCustomers && filteredCustomers.length > 0}
+					{#each $table.getRowModel().rows as row, index}
+						<div
+							in:fly={{ y: 50, duration: 300, delay: index * 50 }}
+							class="w-full gap-4 p-2 px-5 my-1 border border-gray-300 md:flex rounded-xl hover:bg-cyan-700 hover:text-white row {index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}">
+							{#each row.getVisibleCells() as cell}
+								<div
+									class="w-full truncate-cell flex items-center {cell.column.id === 'email' ? 'md:w-1/3' : 'md:w-1/6 lg:w-1/6 xl:w-1/6'}"
+									title={cell.getValue() ?? ""}>
+									{#if cell.column.id === "created_at"}
+										{formatDateToCzech(cell.getValue())}
+									{:else}
+										{cell.getValue() ?? ""}
+									{/if}
+								</div>
+							{/each}
+							<div class="w-full md:w-1/6 lg:w-1/6 xl:w-1/6 flex items-center justify-end">
+								<a>
+								href={$ROUTES.ADMIN.CUSTOMER.EDIT(row.original.id)}
+								class="btn btn-ghost btn-xs">
+								upravit
+								</a>
+							</div>
+						</div>
+					{/each}
+				{:else}
+					<div class="text-center py-8 text-base-content/60">
+						Žádní zákazníci k zobrazení
+					</div>
+				{/if}
+			</div>
+		{/key}
 	</div>
 </div>
 
-
-<section id="page-top">
-	<div class="flex justify-end dropdown">
-		<button class="btn btn-outline" tabindex="0">Sloupce</button>
-		<ul
-			tabindex="0"
-			class="p-2 shadow dropdown-content menu bg-base-100 rounded-box w-52">
-			{#each Object.keys(visibleColumns) as column}
-				<li>
-					<label>
-						<input
-							type="checkbox"
-							checked={$visibleColumnsStore[column]}
-							on:change={() => toggleColumn(column)} />
-						{columnNames[column]}
-					</label>
-				</li>
-			{/each}
-		</ul>
-	</div>
-</section>
-
-<section>
-	<div
-		class="hidden w-full gap-4 p-2 px-5 my-2 border border-gray-300 md:flex rounded-xl bg-gray-400">
-		{#each columnOrder.filter((col) => $visibleColumnsStore[col]) as column, index}
-			<div
-				class="w-full {column === 'email'
-					? 'md:w-1/3'
-					: 'md:w-1/6 lg:w-1/6 xl:w-1/6'} {index <
-				columnOrder.filter((col) => $visibleColumnsStore[col]).length - 1
-					? 'border-r-2'
-					: ''}">
-				{columnNames[column]}
-			</div>
-		{/each}
-		<div class="flex justify-end w-full md:w-1/6 lg:w-1/6 xl:w-1/6">
-			Editovat
-		</div>
-	</div>
-
-	{#key transitionKey}
-		<div in:fade={{ duration: 300 }} out:fade={{ duration: 300 }}>
-			{#if $navigating || loading}
-				<div transition:fade={{ duration: 300 }} class="loading-overlay">
-					<BarLoader size="120" color="black" unit="px" duration="1s" />
-				</div>
-			{:else if filteredCustomers && filteredCustomers.length > 0}
-				{#each $table.getRowModel().rows as row, index}
-					<div
-						in:fly={{ y: 50, duration: 300, delay: index * 50 }}
-						class="w-full gap-4 p-2 px-5 my-1 border border-gray-300 md:flex rounded-xl hover:bg-cyan-700 hover:text-white row {index %
-							2 ===
-						0
-							? 'bg-gray-100'
-							: 'bg-gray-200'}">
-						{#each row.getVisibleCells() as cell}
-							<div
-								class="w-full truncate-cell flex items-center {cell.column
-									.id === 'email'
-									? 'md:w-1/3'
-									: 'md:w-1/6 lg:w-1/6 xl:w-1/6'}"
-								title={cell.getValue() ?? ""}>
-								{#if cell.column.id === "created_at"}
-									{formatDateToCzech(cell.getValue())}
-								{:else}
-									{cell.getValue() ?? ""}
-								{/if}
-							</div>
-						{/each}
-						<div
-							class="w-full md:w-1/6 lg:w-1/6 xl:w-1/6 flex items-center justify-end">
-							<a
-								href="/admin/customer/{row.original.id}"
-								data-sveltekit-preload-data
-								class="font-medium hover:underline">
-								Upravit
-							</a>
-						</div>
-					</div>
-				{/each}
-			{:else}
-				<p>Žádní zákazníci</p>
-			{/if}
-		</div>
-	{/key}
-</section>
-
 <style>
-	/*    .truncate-cell {
-						max-width: 150px;
-						white-space: nowrap;
-						overflow: hidden;
-						text-overflow: ellipsis;
-				}*/
+    .truncate-cell {
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 </style>

@@ -1,9 +1,22 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import { enhance } from "$app/forms";
 	import type { SubmitFunction } from "@sveltejs/kit";
 	import type { ActionData, PageData } from "./$types";
-	import { browser } from "$app/environment";
+	import Editor from "@tinymce/tinymce-svelte";
+
+	let conf = {
+		height: 500,
+		menubar: false,
+		plugins: [
+			"advlist", "autolink", "lists", "link", "image", "charmap",
+			"anchor", "searchreplace", "visualblocks", "code", "fullscreen",
+			"insertdatetime", "media", "table", "preview", "help", "wordcount"
+		],
+		toolbar: "undo redo | blocks | " +
+			"bold italic forecolor | alignleft aligncenter " +
+			"alignright alignjustify | bullist numlist outdent indent | " +
+			"removeformat | help",
+	}
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -11,48 +24,44 @@
 	let { texts, occupiedPositions } = data;
 	$: ({ texts, occupiedPositions } = data);
 
-	let html = "";
-	let Editor: any;
-	let colors = ["#000000"];
 	let loading = false;
 	let title: string = "";
 	let selectedTextId: number = 0;
 	let existingContent: string = "";
 	let selectedPage: string = "hlavni";
 	let position: string = "";
+	let editorContent = "";
+	// let Editor: any;
+	let editorInstance: any;
 
 	const pages = ["hlavni", "jidelnicek"];
 
-	const actions = [
-		"p",
-		"hr",
-		"b",
-		"i",
-		"undo",
-		"redo",
-		"left",
-		"right",
-		"center",
-		"justify",
-		"viewHtml"
-	];
-
 	$: filteredTexts = texts.filter((text) => text.page === selectedPage);
 
-	onMount(async () => {
-		if (browser) {
-			const module = await import("cl-editor");
-			Editor = module.default;
-		}
-	});
+	// TinyMCE konfigurace
+	const editorConfig = {
+		height: 500,
+		menubar: false,
+		plugins: [
+			"advlist", "autolink", "lists", "link", "image", "charmap",
+			"preview", "anchor", "searchreplace", "visualblocks", "code",
+			"fullscreen", "insertdatetime", "media", "table", "help", "wordcount"
+		],
+		toolbar: `undo redo | formatselect | bold italic underline |
+              alignleft aligncenter alignright alignjustify |
+              bullist numlist outdent indent | removeformat | help`,
+		content_style: "body { font-family:Helvetica,Arial,sans-serif; font-size:14px }",
+		branding: false,
+		promotion: false
+	};
 
 	function loadText(textId: number) {
 		const text = texts.find((t) => t.id === textId);
 		if (text) {
 			selectedTextId = text.id;
 			title = text.title || "";
-			html = text.text || "";
 			existingContent = text.text || "";
+			editorContent = text.text || "";
 			selectedPage = text.page || "hlavni";
 			position = text.position || "";
 
@@ -65,7 +74,7 @@
 	function newText() {
 		selectedTextId = 0;
 		title = "";
-		html = "";
+		editorContent = "";
 		existingContent = "";
 		position = "";
 	}
@@ -77,23 +86,21 @@
 
 	const handleSubmit: SubmitFunction = ({ formData }) => {
 		const submittedTitle = formData.get("title") as string;
-		const submittedText = formData.get("text") as string;
 		const submittedPage = formData.get("page") as string;
-		const submittedId = formData.get("id") as string;
-		const submittedPosition = formData.get("position") as string;
 
-		if (!submittedText || !submittedPage) {
+		if (!editorContent || !submittedPage) {
 			alert("Text a stránka jsou povinné");
 			return;
 		}
 
-		// Pro jídelníček není nadpis povinný
 		if (submittedPage !== "jidelnicek" && !submittedTitle) {
 			alert("Název je povinný pro všechny stránky kromě jídelníčku");
 			return;
 		}
 
+		formData.set("text", editorContent);
 		loading = true;
+
 		return async ({ update, result }) => {
 			await update();
 			loading = false;
@@ -112,7 +119,7 @@
 		);
 		if (occupiedPosition && occupiedPosition.id !== selectedTextId) {
 			const confirmed = confirm(
-				`Pozice '${selectedPosition}' je již obsazena. Chcete přepsat existující text?`
+				`Pozice "${selectedPosition}" je již obsazena. Chcete přepsat existující text?`
 			);
 			if (confirmed) {
 				selectedTextId = occupiedPosition.id;
@@ -133,6 +140,7 @@
 		<form method="POST" action="?/update" use:enhance={handleSubmit} class="">
 			<div class="">
 				<h1 class="text-2xl mb-4">Editor textů</h1>
+
 				<div class="mb-4">
 					<select
 						id="page-select"
@@ -140,12 +148,14 @@
 						class="mr-5 border-black rounded-lg border p-2"
 						bind:value={selectedPage}
 						on:change={handlePageChange}
-						required>
+						required
+					>
 						{#each pages as page}
 							<option value={page}>{page}</option>
 						{/each}
 					</select>
 				</div>
+
 				<div class="mb-4">
 					<input type="hidden" name="id" bind:value={selectedTextId} />
 					<select
@@ -153,16 +163,20 @@
 						class="mr-5 border-black rounded-lg border p-2"
 						bind:value={selectedTextId}
 						on:change={() => loadText(selectedTextId)}
-						disabled={!selectedPage}>
+						disabled={!selectedPage}
+					>
 						<option value={0}>Vyberte text</option>
 						{#each filteredTexts as text}
-							<option value={text.id} selected={selectedTextId === text.id}
-								>{text.title}</option>
+							<option value={text.id} selected={selectedTextId === text.id}>
+								{text.title}
+							</option>
 						{/each}
 					</select>
-					<button type="button" class="btn btn-outline" on:click={newText}
-						>Nový text</button>
+					<button type="button" class="btn btn-outline" on:click={newText}>
+						Nový text
+					</button>
 				</div>
+
 				{#if selectedPage === "hlavni"}
 					<div class="py-5">
 						<label for="">Umístění</label><br />
@@ -185,14 +199,16 @@
 											bind:group={position}
 											on:change={() => checkPosition(pos)}
 											disabled={occupiedPositions.some(
-												(p) => p.position === pos && p.id !== selectedTextId
-											)} />
+                        (p) => p.position === pos && p.id !== selectedTextId
+                      )}
+										/>
 									</div>
 								</div>
 							{/each}
 						</div>
 					</div>
 				{/if}
+
 				{#if selectedPage !== "jidelnicek"}
 					<div class="py-5">
 						<label for="title">Nadpis</label><br />
@@ -202,13 +218,13 @@
 							name="title"
 							type="text"
 							bind:value={title}
-							required />
+							required
+						/>
 					</div>
 				{:else}
 					<input type="hidden" name="title" value="" />
 				{/if}
 
-				<input type="hidden" name="text" bind:value={html} />
 				<div class="mt-10">
 					<h2 class="text-xl font-bold mb-2">Existující obsah:</h2>
 					<div class="border-gray-400 border rounded-2xl p-5 w-full">
@@ -216,30 +232,32 @@
 					</div>
 				</div>
 
-				<div class="mt-10">
-					{#if browser && Editor}
-						<Editor
-							bind:html
-							{colors}
-							{actions}
-							on:change={(evt) => (html = evt.detail)} />
-					{/if}
+				<!-- TinyMCE Editor -->
+				<Editor
+					apiKey="jp18q8dghxxd1mg7rr8s1127y1pacvurfssh9ufnpnu7j5kh"
+					channel="7"
+					value="<p>This is the initial content of the editor.</p>"
+					{conf}
+				/>
 				</div>
-			</div>
+
+
+
+
 			<button
-				disabled={loading ||
-					!html ||
-					!selectedPage ||
-					(selectedPage !== "jidelnicek" && !title)}
+				disabled={loading || !editorContent || !selectedPage || (selectedPage !== "jidelnicek" && !title)}
 				type="submit"
-				class="btn btn-outline mt-4">
+				class="btn btn-outline mt-4"
+			>
 				{loading ? "Ukládá se..." : "Potvrdit změnu"}
 			</button>
+
 			{#if form?.message}
 				<div class="flex w-full p-2 my-4 border rounded-lg">
 					<p
 						class:success={form.message.success}
-						class:error={!form.message.success}>
+						class:error={!form.message.success}
+					>
 						{form.message.display}
 					</p>
 				</div>
@@ -247,3 +265,13 @@
 		</form>
 	</div>
 </section>
+
+<style>
+    .success {
+        color: rgb(21 128 61);
+    }
+
+    .error {
+        color: rgb(185 28 28);
+    }
+</style>
