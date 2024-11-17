@@ -73,7 +73,7 @@
 			</div>
 			<!-- menu -->
 			<div
-				class="items-center hidden m-2 grid-cols-4 text-center border-2 rounded-full lg:grid md:grid bg-slate-50">
+				class="items-center hidden m-2 grid-cols-4 text-center border-2 rounded-xl lg:grid md:grid bg-slate-50">
 				<div class="border-r-2 text-slate-600" id="">
 					<a class="navItem" href="/">Úvod</a>
 				</div>
@@ -99,16 +99,17 @@
 					<div
 						class="relative items-center hidden grid-cols-2 ml-auto lg:grid md:flex">
 						<div class="flex pr-2">
-							<!-- svelte-ignore a11y-missing-attribute -->
+							<button>
 							<a
-								class="p-2 px-6 text-blue-800 border-2 border-blue-900 btn rounded-xl hover:text-white hover:bg-blue-800"
+								class="p-2 px-6 border-2 border-gray-400 btn rounded-xl hover:text-white"
 								href="/profile">Účet</a>
+							</button>
 						</div>
 						<div class="">
 							<button
 								on:click={signOut}
 								disabled={loading}
-								class="p-2 px-6 text-blue-800 border-2 border-blue-900 btn rounded-xl hover:text-white hover:bg-blue-800">
+								class="p-2 px-6 border-2 border-gray-400 btn rounded-xl hover:text-white ">
 								Odhlásit
 							</button>
 						</div>
@@ -116,16 +117,20 @@
 				{:else}
 					<div class="relative items-center hidden grid-cols-2 ml-auto md:grid">
 						<div class="flex pr-2">
+							<button>
 							<a
-								class="p-2 px-6 text-blue-800 border-2 border-blue-900 btn rounded-3xl hover:text-white hover:bg-blue-800"
-								href="/login">Přihlásit</a>
+								class="p-2 px-6 border-2 border-gray-400 btn rounded-xl hover:border-green-700 transition-all duration-300 ease-in-out hover:text-white"
+								href="/signup">
+								Registrace</a>
+							</button>
 						</div>
 						<div class="flex">
+							<button>
 							<a
-								class="p-2 px-6 text-blue-800 border-2 border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800"
-								href="/signup">
-								Přidej se
+								class="p-2 px-6 border-2 border-gray-400 btn rounded-xl hover:border-green-700 transition-all duration-300 ease-in-out hover:text-white"
+								href="/login">Přihlašení
 							</a>
+							</button>
 						</div>
 					</div>
 				{/if}
@@ -153,6 +158,8 @@
 				</div>
 			</div>
 		</div>
+
+		 <!-- Mobilní menu -->
 		<div
 			class="flex flex-row-reverse justify-center text-lg tracking-wide text-center bg-white md:hidden">
 			{#if menuVisible}
@@ -191,16 +198,20 @@
 							</div>
 						{:else}
 							<div class="col-end-2 pr-2">
+								<button>
 								<a
 									class="p-1 px-6 text-sm text-blue-800 border border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800"
 									href="/login">Přihlásit</a>
+								</button>
 							</div>
 							<div class="">
+								<button>
 								<a
 									class="p-1 px-6 text-sm text-blue-800 border border-blue-700 btn rounded-3xl hover:text-white hover:bg-blue-800"
 									href="/signup">
 									Přidej se
 								</a>
+								</button>
 							</div>
 						{/if}
 					</div>
@@ -210,3 +221,19 @@
 		<hr class="mx-4" />
 	</nav>
 </header>
+
+<style lang="scss">
+  @use "$lib/styles/variables" as vars;
+
+  button {
+    a {
+      &:hover {
+        background-color: vars.$button-main-color;
+      }
+    }
+
+    &:not(:has(a)):hover {
+      background-color: vars.$button-main-color;
+    }
+  }
+</style>
