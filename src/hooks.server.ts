@@ -1,76 +1,62 @@
-import { createServerClient } from "@supabase/ssr";
-import { type Handle, redirect } from "@sveltejs/kit";
-import { sequence } from "@sveltejs/kit/hooks";
-
-import { PRIVATE_SBKey, PRIVATE_SBUrl } from "$env/static/private";
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public'
+import { createServerClient } from '@supabase/ssr'
+import { type Handle, redirect } from '@sveltejs/kit'
+import { sequence } from '@sveltejs/kit/hooks'
 
 const supabase: Handle = async ({ event, resolve }) => {
-	event.locals.supabase = createServerClient(PRIVATE_SBUrl, PRIVATE_SBKey, {
+	event.locals.supabase = createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, {
 		cookies: {
 			get: (key) => event.cookies.get(key),
 			set: (key, value, options) => {
-				event.cookies.set(key, value, { ...options, path: "/" });
+				event.cookies.set(key, value, { ...options, path: '/' })
 			},
 			remove: (key, options) => {
-				event.cookies.delete(key, { ...options, path: "/" });
+				event.cookies.delete(key, { ...options, path: '/' })
 			}
 		}
-	});
+	})
 
 	event.locals.safeGetSession = async () => {
-		const {
-			data: { session }
-		} = await event.locals.supabase.auth.getSession();
-		if (!session) {
-			return { session: null, user: null };
-		}
+		const { data: { session } } = await event.locals.supabase.auth.getSession()
+		if (!session) return { session: null, user: null }
 
-		const {
-			data: { user },
-			error
-		} = await event.locals.supabase.auth.getUser();
-		if (error) {
-			return { session: null, user: null };
-		}
+		const { data: { user }, error } = await event.locals.supabase.auth.getUser()
+		if (error) return { session: null, user: null }
 
-		return { session, user };
-	};
+		return { session, user }
+	}
 
 	return resolve(event, {
 		filterSerializedResponseHeaders(name) {
-			return name === "content-range" || name === "x-supabase-api-version";
+			return name === 'content-range' || name === 'x-supabase-api-version'
 		}
-	});
-};
+	})
+}
 
 const authGuard: Handle = async ({ event, resolve }) => {
-	const { session, user } = await event.locals.safeGetSession();
-	event.locals.session = session;
-	event.locals.user = user;
+	const { session, user } = await event.locals.safeGetSession()
+	event.locals.session = session
+	event.locals.user = user
 
-	// Admin section logic
 	if (event.url.pathname.startsWith("/admin")) {
-		if (!event.locals.session && event.url.pathname !== "/admin/signin") {
-			throw redirect(303, "/admin/signin");
+		if (!session && event.url.pathname !== "/admin/signin") {
+			throw redirect(303, "/admin/signin")
 		}
 
-		if (event.locals.session && event.url.pathname === "/admin/signin") {
-			throw redirect(303, "/admin");
+		if (session && event.url.pathname === "/admin/signin") {
+			throw redirect(303, "/admin")
 		}
-	}
-
-	// Root section logic
-	else {
-		if (!event.locals.session && event.url.pathname.startsWith("/private")) {
-			throw redirect(303, "/login");
+	} else {
+		if (!session && event.url.pathname.startsWith("/private")) {
+			throw redirect(303, "/login")
 		}
 
-		if (event.locals.session && event.url.pathname === "/login") {
-			throw redirect(303, "/");
+		if (session && event.url.pathname === "/login") {
+			throw redirect(303, "/")
 		}
 	}
 
-	return resolve(event);
-};
+	return resolve(event)
+}
 
-export const handle: Handle = sequence(supabase, authGuard);
+export const handle = sequence(supabase, authGuard)
