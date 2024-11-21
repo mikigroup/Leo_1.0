@@ -112,9 +112,9 @@
 					<li><a href="/">Šťastné srdce</a></li>
 
 					<li><a href={$ROUTES.ADMIN.BASE}>Nástěnka</a></li>
-					<li><a href="/admin/customer">Zákazníci</a></li>
-					<li><a href="/admin/order">Objednávky</a></li>
-					<li><a href="/admin/menu">Menu</a></li>
+					<li><a href={$ROUTES.ADMIN.CUSTOMER.LIST}>Zákazníci</a></li>
+					<li><a href={$ROUTES.ADMIN.ORDER.LIST}>Objednávky</a></li>
+					<li><a href={$ROUTES.ADMIN.MENU.LIST}>Menu</a></li>
 					<li><a href="/admin/text">Texty</a></li>
 				</ul>
 			</div>
@@ -146,7 +146,7 @@
 				<time class="">{formatterTime.format($currentDate)}</time>
 			</div>
 		</div>
-		<div class="navbar-end">
+		<div class="navbar-end pr-3">
 			{#if $page.data.session}
 				<div class="hidden md:block">
 					<div class="dropdown dropdown-end">
@@ -163,7 +163,6 @@
 							tabindex="0"
 							class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
 							<li>
-								<!-- svelte-ignore a11y-missing-attribute -->
 								<a href="/admin/settings" class="justify-between">
 									Nastavení účtu
 									<span class="badge">Nový</span>
