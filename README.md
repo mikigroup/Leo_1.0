@@ -1,4 +1,4 @@
-# 🍽️ Webová aplikace pro správu a objednávání jídel
+# 🍽️ "Malý Leo" - Webová aplikace pro správu a objednávání jídel
 
 Web application for food management and ordering.
 
