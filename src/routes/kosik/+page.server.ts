@@ -1,6 +1,7 @@
 import { error, redirect } from "@sveltejs/kit";
 import type { Actions } from "./$types";
 import nodemailer from "nodemailer";
+import { PRIVATE_SMTP_KEY } from '$env/static/private';
 
 const transporter = nodemailer.createTransport({
 	host: "smtp.seznam.cz",
@@ -8,7 +9,7 @@ const transporter = nodemailer.createTransport({
 	secure: true,
 	auth: {
 		user: "info@malyleo.cz",
-		pass: "c^twq^dU$H^56#8DynKs"
+		pass: PRIVATE_SMTP_KEY
 	}
 });
 
