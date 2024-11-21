@@ -16,6 +16,7 @@ export const ROUTES_STORE = {
 			NEW: "/admin/order/neworder",
 			EDIT: (id: string) => `/admin/order/${id}`
 		},
+		TEXT: "/text",
 		SETTINGS: "/admin/settings"
 	},
 	CUSTOMER: {
