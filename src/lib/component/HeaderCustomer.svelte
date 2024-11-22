@@ -94,7 +94,6 @@
 						$currentDate
 					)}<span class="pr-2">&nbsp;</span>{formatterTime.format($currentDate)}</time>
 				</div>
-				<!-- items-center pl-12 ml-12 md:ml-5 md:pl-5 -->
 			</div>
 			<!-- menu -->
 			<div
@@ -153,7 +152,7 @@
 							<button>
 							<a
 								class="p-2 px-6 border-2 border-gray-400 btn rounded-xl hover:border-green-700 transition-all duration-300 ease-in-out hover:text-white"
-								href="/login">Přihlašení
+								href="/login">Přihlášení
 							</a>
 							</button>
 						</div>

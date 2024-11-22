@@ -95,16 +95,18 @@
 						</li>
 					</ul>
 					<div class="flex justify-center mt-8 space-x-4">
-						<a
-							href="/jidelnicek"
-							class="px-8 py-3 text-lg font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 items-center flex">
-							Zobrazit menu
-						</a>
-						<a
-							href="/signup"
-							class="px-8 py-3 text-lg font-semibold text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 items-center flex">
-							Registrace
-						</a>
+						<button class="flex items-center justify-center">
+							<a
+								class="px-10 pt-7 pb-14 border-2 border-orange-400 btn rounded-xl hover:bg-gray-700 htransition-all duration-300 ease-in-out hover:text-white text-xl"
+								href="/jidelnicek">Zobrazit menu
+							</a>
+						</button>
+						<button class="">
+							<a
+								class="px-10 pt-7 pb-14 border-2 border-green-600 btn rounded-xl hover:bg-gray-700 transition-all duration-300 ease-in-out hover:text-white text-xl"
+								href="/signup">Registrace
+							</a>
+						</button>
 					</div>
 				</div>
 				<div class="">
