@@ -97,13 +97,13 @@
 					<div class="flex justify-center mt-8 space-x-4">
 						<button class="flex items-center justify-center">
 							<a
-								class="px-10 pt-7 pb-14 border-2 border-orange-400 btn rounded-xl hover:bg-gray-700 htransition-all duration-300 ease-in-out hover:text-white text-xl"
+								class="px-10 pt-7 pb-14 border-2 border-orange-400 btn rounded-xl hover:bg-gray-700 htransition-all duration-300 ease-in-out hover:text-white text-lg"
 								href="/jidelnicek">Zobrazit menu
 							</a>
 						</button>
 						<button class="">
 							<a
-								class="px-10 pt-7 pb-14 border-2 border-green-600 btn rounded-xl hover:bg-gray-700 transition-all duration-300 ease-in-out hover:text-white text-xl"
+								class="px-10 pt-7 pb-14 border-2 border-green-600 btn rounded-xl hover:bg-gray-700 transition-all duration-300 ease-in-out hover:text-white text-lg"
 								href="/signup">Registrace
 							</a>
 						</button>
