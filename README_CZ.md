@@ -1,6 +1,4 @@
-# 🍽️ Šťastné srdce - Happy heart
-
-Webová aplikace pro správu a objednávání jídel.
+# 🍽️ "Malý Leo" - Webová aplikace pro správu a objednávání jídel
 
 ## 🛠️ Technologie - Techstack
 

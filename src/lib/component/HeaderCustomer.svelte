@@ -21,13 +21,29 @@
 
 	let src = "/android-chrome-192x192.png";
 
-	const formatter = new Intl.DateTimeFormat("en", {
+	let loading = false;
+	const weekdays = [
+		"Neděle",
+		"Pondělí",
+		"Úterý",
+		"Středa",
+		"Čtvrtek",
+		"Pátek",
+		"Sobota"
+	];
+
+	const formatterDate = new Intl.DateTimeFormat("cs", {
+		month: "short",
+		day: "numeric"
+	});
+
+	const formatterTime = new Intl.DateTimeFormat("cs", {
 		hour12: false,
 		hour: "numeric",
 		minute: "2-digit"
 	});
 
-	const time = readable(new Date(), function start(set) {
+	const currentDate = readable(new Date(), function start(set) {
 		const interval = setInterval(() => {
 			set(new Date());
 		}, 1000);
@@ -37,23 +53,29 @@
 		};
 	});
 
+	let day = "";
+	$: {
+		if ($currentDate) {
+			const dayIndex = $currentDate.getDay();
+			day = weekdays[dayIndex];
+		}
+	}
+
 	let menuVisible = false;
 
 	function toggleMenu() {
 		menuVisible = !menuVisible;
 	}
 
-	let loading = false;
-
 	$: totalPieces = $totalPiecesStore;
 </script>
 
 <header class="bg-white">
 	<nav>
-		<div class="grid grid-cols-2 px-4 m-2 mx-auto md:grid-cols-3 max-w-8xl">
+		<div class="grid grid-cols-2 m-2 mx-auto md:grid-cols-3 max-w-8xl">
 			<div
 				class="grid items-center w-full grid-cols-2 py-4 mx-4 lg:px-8 lg:mx-0">
-				<div class="grid grid-cols-2 w-80">
+				<div class="grid grid-cols-2">
 					<h1
 						class="grid items-center text-xl font-semibold animate__flipInX animate__animated animate__delay-2s">
 						<a href="/">Malý LEO</a>
@@ -63,11 +85,14 @@
 						alt="maly_leo"
 						class="pt-1"
 						width="40"
-						height="40" />
+					/>
 				</div>
 				<!-- čas -->
-				<div class="grid justify-end w-44">
-					<time>{formatter.format($time)}</time>
+				<div class="grid grid-cols-2 justify-center w-80 text-md">
+					<time class=""
+					>{day}<span class="pr-2">&nbsp;</span>{formatterDate.format(
+						$currentDate
+					)}<span class="pr-2">&nbsp;</span>{formatterTime.format($currentDate)}</time>
 				</div>
 				<!-- items-center pl-12 ml-12 md:ml-5 md:pl-5 -->
 			</div>
@@ -134,8 +159,13 @@
 						</div>
 					</div>
 				{/if}
+				<div class="md:hidden">
+					{#if !totalPieces}{:else}
+						<strong>{totalPieces}</strong>
+					{/if}
+				</div>
 				<div class="grid justify-center md:hidden">
-					<button on:click={toggleMenu} class="text-xl">
+					<button on:click={toggleMenu} class="text-xl p-2 rounded mobile-menu-btn">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-7 w-7"
@@ -149,12 +179,6 @@
 								d="M4 6h16M4 12h16M4 18h16" />
 						</svg>
 					</button>
-				</div>
-				<div class="md:hidden">
-					<!-- svelte-ignore empty-block -->
-					{#if !totalPieces}{:else}
-						<strong>{totalPieces}</strong>
-					{/if}
 				</div>
 			</div>
 		</div>
@@ -234,6 +258,12 @@
 
     &:not(:has(a)):hover {
       background-color: vars.$button-main-color;
+    }
+  }
+
+  .mobile-menu-btn {
+    &:hover {
+      @apply bg-white text-black;
     }
   }
 </style>
