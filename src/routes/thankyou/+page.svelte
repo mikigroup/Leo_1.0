@@ -1,97 +1,82 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { CartItemsStore } from "$lib/stores/store";
+	import { page } from "$app/stores";
+
+	export let data;
+	const { order, profileValidation } = data;
+
+	// Funkce pro formátování data
+	function formatDate(dateString: string) {
+		if (!dateString) return '';
+		const date = new Date(dateString);
+		return date.toLocaleDateString('cs-CZ', {
+			weekday: 'long',
+			year: 'numeric',
+			month: 'long',
+			day: 'numeric'
+		});
+	}
+
+	onMount(() => {
+		// Vyčištění košíku po úspěšném zobrazení souhrnu
+		setTimeout(() => {
+			CartItemsStore.clear();
+			console.log("Košík byl vyčištěn po zobrazení souhrnu objednávky");
+		}, 1500);
+	});
+
+	const { generalSettings } = data;
+</script>
+
 <svelte:head>
-	<title>Šťastné srdce - Děkujeme za objednávku</title>
+	<title>{generalSettings.shopName} - Děkujeme za objednávku</title>
 	<meta name="description" content="Děkujeme za objednávku" />
 </svelte:head>
 
-<div
-	class="max-w-screen-lg px-4 py-8 py-16 mx-auto mt-20 rounded-lg bg-orange-50">
-	<div class="flex justify-center pt-5">
-		<p class="text-xl md:text-2xl">Děkujeme za objednávku, ať jídlo chutná !</p>
-	</div>
-	<div class="letter-image">
-		<div class="animated-mail">
-			<div class="back-fold"></div>
-			<div class="letter">
-				<div class="letter-border"></div>
-				<div class="letter-title"></div>
-				<div class="letter-context"></div>
-				<div class="letter-stamp">
-					<div class="letter-stamp-inner"></div>
+<div class="max-w-screen-lg px-4 py-8 py-16 mx-auto mt-20 rounded-lg bg-orange-50">
+	<div class="letter-container">
+		<div class="letter-image">
+			<div class="animated-mail">
+				<div class="back-fold"></div>
+				<div class="letter">
+					<div class="letter-border"></div>
+					<div class="letter-title"></div>
+					<div class="letter-context"></div>
+					<div class="letter-stamp">
+						<div class="letter-stamp-inner"></div>
+					</div>
 				</div>
+				<div class="top-fold"></div>
+				<div class="body"></div>
+				<div class="left-fold"></div>
 			</div>
-			<div class="top-fold"></div>
-			<div class="body"></div>
-			<div class="left-fold"></div>
 		</div>
-		<div class="shadow"></div>
 	</div>
-	<svg
-		xmlns="http://www.w3.org/2000/svg"
-		xmlns:xlink="http://www.w3.org/1999/xlink"
-		version="1.1"
-		id="Calque_1"
-		x="0px"
-		y="0px"
-		viewBox="0 0 1300 550"
-		style="enable-background:new 0 0 1300 550;"
-		xml:space="preserve">
-		<path
-			class="st1"
-			d="M 0 250 C 600 450 650 100 1300 250 L 1300 550 L 0 550 L 0 250">
-			<animate
-				attributeName="d"
-				dur="5s"
-				begin="1s"
-				values="M 0 250 C 600 450 650 100 1300 250 L 1300 550 L 0 550 L 0 250;
-                M 0 250 C 600 100 650 450 1300 250 L 1300 550 L 0 550 L 0 250;
-				M 0 250 C 600 450 650 100 1300 250 L 1300 550 L 0 550 L 0 250"
-				repeatCount="indefinite" />
-		</path>
 
-		<path
-			class="st1"
-			d="M 0 250 C 600 100 650 450 1300 250 L 1300 550 L 0 550 L 0 250">
-			<animate
-				attributeName="d"
-				dur="5s"
-				values="M 0 250 C 600 100 650 450 1300 250 L 1300 550 L 0 550 L 0 250;
-                M 0 250 C 600 450 650 100 1300 250 L 1300 550 L 0 550 L 0 250;
-				M 0 250 C 600 100 650 450 1300 250 L 1300 550 L 0 550 L 0 250"
-				repeatCount="indefinite" />
-		</path>
+	<div class="flex flex-col items-center pt-5 mb-8">
+		<h1 class="text-3xl md:text-4xl font-bold text-green-800 mb-2">Děkujeme za objednávku!</h1>
+		<p class="text-xl md:text-2xl">Vaše jídlo bylo úspěšně objednáno</p>
+		{#if order.order_number}
+			<p class="mt-2 text-lg">Číslo objednávky: <strong>{order.order_number}</strong></p>
+		{/if}
+		<p class="text-sm mt-2">Potvrzení bylo zasláno na Váš e-mail</p>
+	</div>
 
-		<path
-			class="st1"
-			d="M 0 250 C 950 350 950 150 1300 250 L 1300 550 L 0 550 L 0 250">
-			<animate
-				attributeName="d"
-				dur="5s"
-				begin="2s"
-				values="M 0 250 C 950 350 950 150 1300 250 L 1300 550 L 0 550 L 0 250;
-                M 0 250 C 350 150 350 350 1300 250 L 1300 550 L 0 550 L 0 250;
-				M 0 250 C 950 350 950 150 1300 250 L 1300 550 L 0 550 L 0 250"
-				repeatCount="indefinite" />
-		</path>
-
-		<path
-			class="st1"
-			d="M 0 250 C 350 150 350 350 1300 250 L 1300 550 L 0 550 L 0 250">
-			<animate
-				attributeName="d"
-				dur="5s"
-				values="M 0 250 C 350 150 350 350 1300 250 L 1300 550 L 0 550 L 0 250;
-                M 0 250 C 950 350 950 150 1300 250 L 1300 550 L 0 550 L 0 250;
-				M 0 250 C 350 150 350 350 1300 250 L 1300 550 L 0 550 L 0 250"
-				repeatCount="indefinite" />
-		</path>
-	</svg>
+	<!-- Odkaz zpět do jídelníčku -->
+	<div class="flex justify-center mt-8">
+		<a href="/obedy" class="px-6 py-3 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors shadow-md">
+			Zpět na obědy
+		</a>
+	</div>
 </div>
 
 <style>
-	.st1 {
-		opacity: 0.6;
-		fill: rgb(22 101 52);
-		enable-background: new;
+	.letter-container {
+		position: relative;
+		width: 100%;
+		height: 200px;
+		margin-bottom: 20px;
 	}
 
 	.letter-image {
@@ -114,6 +99,7 @@
 		-moz-transition: 0.4s;
 		transition: 0.4s;
 	}
+
 	.animated-mail .body {
 		position: absolute;
 		bottom: 0;
@@ -124,6 +110,7 @@
 		border-color: transparent transparent #e95f55 transparent;
 		z-index: 2;
 	}
+
 	.animated-mail .top-fold {
 		position: absolute;
 		top: 50px;
@@ -131,21 +118,12 @@
 		height: 0;
 		border-style: solid;
 		border-width: 50px 100px 0 100px;
-		-webkit-transform-origin: 50% 0%;
-		-webkit-transition:
-			transform 0.4s 0.4s,
-			z-index 0.2s 0.4s;
-		-moz-transform-origin: 50% 0%;
-		-moz-transition:
-			transform 0.4s 0.4s,
-			z-index 0.2s 0.4s;
 		transform-origin: 50% 0%;
-		transition:
-			transform 0.4s 0.4s,
-			z-index 0.2s 0.4s;
+		transition: transform 0.4s 0.4s, z-index 0.2s 0.4s;
 		border-color: #cf4a43 transparent transparent transparent;
 		z-index: 2;
 	}
+
 	.animated-mail .back-fold {
 		position: absolute;
 		bottom: 0;
@@ -154,6 +132,7 @@
 		background: #cf4a43;
 		z-index: 0;
 	}
+
 	.animated-mail .left-fold {
 		position: absolute;
 		bottom: 0;
@@ -164,6 +143,7 @@
 		border-color: transparent transparent transparent #e15349;
 		z-index: 2;
 	}
+
 	.animated-mail .letter {
 		left: 20px;
 		bottom: 0px;
@@ -177,7 +157,22 @@
 		-moz-transition: 0.4s 0.2s;
 		transition: 0.4s 0.2s;
 	}
-	.animated-mail .letter .letter-border {
+
+	.letter-image:hover .animated-mail {
+		transform: translateY(50px);
+	}
+
+	.letter-image:hover .animated-mail .top-fold {
+		transition: transform 0.4s, z-index 0.2s;
+		transform: rotateX(180deg);
+		z-index: 0;
+	}
+
+	.letter-image:hover .animated-mail .letter {
+		height: 180px;
+	}
+
+	.letter-border {
 		height: 10px;
 		width: 100%;
 		background: repeating-linear-gradient(
@@ -188,21 +183,24 @@
 			transparent 18px
 		);
 	}
-	.animated-mail .letter .letter-title {
+
+	.letter-title {
 		margin-top: 10px;
 		margin-left: 5px;
 		height: 10px;
 		width: 40%;
 		background: #cb5a5e;
 	}
-	.animated-mail .letter .letter-context {
+
+	.letter-context {
 		margin-top: 10px;
 		margin-left: 5px;
 		height: 10px;
 		width: 20%;
 		background: #cb5a5e;
 	}
-	.animated-mail .letter .letter-stamp {
+
+	.letter-stamp {
 		margin-top: 30px;
 		margin-left: 120px;
 		border-radius: 100%;
@@ -210,53 +208,5 @@
 		width: 30px;
 		background: #cb5a5e;
 		opacity: 0.3;
-	}
-
-	.shadow {
-		color: white;
-		position: absolute;
-		top: 200px;
-		left: 50%;
-		width: 400px;
-		height: 30px;
-		transition: 0.4s;
-		transform: translateX(-50%);
-		-webkit-transition: 0.4s;
-		-webkit-transform: translateX(-50%);
-		-moz-transition: 0.4s;
-		-moz-transform: translateX(-50%);
-		border-radius: 100%;
-		background: radial-gradient(
-			rgba(0, 0, 0, 0.5),
-			rgba(0, 0, 0, 0),
-			rgba(0, 0, 0, 0)
-		);
-	}
-
-	.letter-image:hover .animated-mail {
-		transform: translateY(50px);
-		-webkit-transform: translateY(50px);
-		-moz-transform: translateY(50px);
-	}
-	.letter-image:hover .animated-mail .top-fold {
-		transition:
-			transform 0.4s,
-			z-index 0.2s;
-		transform: rotateX(180deg);
-		-webkit-transition:
-			transform 0.4s,
-			z-index 0.2s;
-		-webkit-transform: rotateX(180deg);
-		-moz-transition:
-			transform 0.4s,
-			z-index 0.2s;
-		-moz-transform: rotateX(180deg);
-		z-index: 0;
-	}
-	.letter-image:hover .animated-mail .letter {
-		height: 180px;
-	}
-	.letter-image:hover .shadow {
-		width: 250px;
 	}
 </style>

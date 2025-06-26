@@ -1,58 +1,88 @@
-import { redirect, fail } from "@sveltejs/kit";
+import { fail } from "@sveltejs/kit";
 import type { Actions } from "./$types";
+import { sendEmail } from "$lib/email";
 
-export const actions: Actions = {
+export const actions = {
 	signUp: async ({ request, locals: { supabase } }) => {
-		const formData = await request.formData();
-		const email = formData.get("email") as string;
-		const password = formData.get("password") as string;
-		const repassword = formData.get("repassword") as string;
+		try {
+			const formData = await request.formData();
+			const email = formData.get("email")?.toString();
+			const password = formData.get("password")?.toString();
+			const repassword = formData.get("repassword")?.toString();
 
-		if (password !== repassword) {
-			return fail(400, {
-				message: { success: false, display: "Hesla nejsou stejná" }
-			});
-		} else {
-			const { data, error } = await supabase.auth.signUp({
+			// Validace vstupů
+			if (!email || !password || !repassword) {
+				return fail(400, {
+					error: true,
+					message: "Vyplňte prosím všechna pole",
+					email
+				});
+			}
+
+			if (password !== repassword) {
+				return fail(400, {
+					error: true,
+					message: "Hesla se neshodují",
+					email
+				});
+			}
+
+			// Supabase registrace
+			const { data: userData, error } = await supabase.auth.signUp({
 				email,
 				password,
 				options: {
-					data: {
-						user_role: "customer"
-					}
+					emailRedirectTo: `${new URL(request.url).origin}/auth/callback`
 				}
 			});
 
 			if (error) {
-				console.error("Chyba při registraci uživatele:", error.message);
 				return fail(400, {
-					message: { success: false, display: "Chyba při registraci" }
+					error: true,
+					message:
+						error.message === "User already registered"
+							? "Tento email je již registrován"
+							: "Chyba při registraci",
+					email
 				});
-			} else {
-				const user = data.user;
-				console.log("Registrovaný uživatel:", user);
-				console.log(
-					"Registrovaný uživatel role:",
-					user?.user_metadata?.user_role
-				);
-
-				if (!user) {
-					return fail(400, {
-						message: {
-							success: false,
-							display: "Tento e-mail je již registrován."
-						}
-					});
-				} else {
-					return {
-						message: {
-							success: true,
-							display:
-								"Na Vaši emailovou schránku byla odeslána zpráva. Prosím potvrďte ji a následně se přihlašte."
-						}
-					};
-				}
 			}
+
+			// Odeslání follow-up emailu pro dokončení registrace
+			await sendEmail({
+				to: email,
+				subject: "Dokončete svou registraci",
+				html: `
+					<h1>Vítejte v našem e-shopu!</h1>
+					<p>Děkujeme za registraci. Pro plné využití všech funkcí je potřeba dokončit registraci.</p>
+					<p>Klikněte na tlačítko níže pro dokončení registrace:</p>
+					<a href="${new URL(request.url).origin}/signup/complete" style="
+						display: inline-block;
+						padding: 12px 24px;
+						background-color: #4CAF50;
+						color: white;
+						text-decoration: none;
+						border-radius: 4px;
+						margin: 20px 0;
+					">
+						Dokončit registraci
+					</a>
+					<p>Pokud tlačítko nefunguje, zkopírujte tento odkaz do prohlížeče:</p>
+					<p>${new URL(request.url).origin}/signup/complete</p>
+				`
+			});
+
+			// Úspěšná registrace
+			return {
+				success: true,
+				error: false,
+				message: `Na emailovou adresu ${email} byla odeslána zpráva pro potvrzení registrace. Pro dokončení registrace prosím potvrďte odkaz ve zprávě.`
+			};
+		} catch (error) {
+			console.error("Unexpected error:", error);
+			return fail(500, {
+				error: true,
+				message: "Došlo k neočekávané chybě"
+			});
 		}
 	}
-};
+} satisfies Actions;

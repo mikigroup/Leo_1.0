@@ -1,53 +1,46 @@
-// src/routes/admin/menu/[menuId]/+page.server.ts
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
+import { loadMenu, type Menu } from "$lib/services/menuService";
 
-export const load: PageServerLoad = async ({ params, locals: { supabase } }) => {
+export const load: PageServerLoad = async ({
+	params,
+	locals: { supabase }
+}) => {
 	const { menuId } = params;
 
 	try {
-		// 1. Načteme základní menu data
-		const { data: menu, error: menuError } = await supabase
-			.from('menus')
-			.select(`
-                *,
-                variants:menu_variants(
-                    *,
-                    allergens:variant_allergens(allergen:allergens(*)),
-                    ingredients:variant_ingredients(ingredient:ingredients(*))
-                )
-            `)
-			.eq('id', menuId)
-			.single();
+		// Načtení menu pomocí naší služby
+		const menu = await loadMenu(supabase, menuId);
 
-		if (menuError) {
-			console.error("Error loading menu:", menuError);
-			throw error(404, "Menu not found");
+		// Načtení všech alergenů pro výběr
+		const { data: allAllergens, error: allergensError } = await supabase
+			.from("allergens")
+			.select("*")
+			.order("number");
+
+		if (allergensError) {
+			console.error("Error fetching allergens:", allergensError);
+			throw error(500, "Failed to load allergens");
 		}
 
-		// 2. Načteme alergeny a ingredience pro selekty
-		const [allergensResult, ingredientsResult] = await Promise.all([
-			supabase
-				.from('allergens')
-				.select('*')
-				.order('number'),
-			supabase
-				.from('ingredients')
-				.select('*')
-				.order('name')
-		]);
+		// Načtení všech ingrediencí pro výběr
+		const { data: allIngredients, error: ingredientsError } = await supabase
+			.from("ingredients")
+			.select("*")
+			.order("name");
 
-		if (allergensResult.error) throw allergensResult.error;
-		if (ingredientsResult.error) throw ingredientsResult.error;
+		if (ingredientsError) {
+			console.error("Error fetching ingredients:", ingredientsError);
+			throw error(500, "Failed to load ingredients");
+		}
 
 		return {
 			menu,
-			allAllergens: allergensResult.data,
-			allIngredients: ingredientsResult.data
+			allAllergens,
+			allIngredients
 		};
-
 	} catch (err) {
-		console.error("Error in menu edit load:", err);
-		throw error(500, "Failed to load menu data");
+		console.error("Unexpected error:", err);
+		throw error(500, "An unexpected error occurred");
 	}
 };

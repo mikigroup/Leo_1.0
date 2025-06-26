@@ -1,101 +1,41 @@
-<!--<footer class="flex flex-col justify-center bg-gradient-to-b from-gray-700 from-60% to-gray-800 text-white text-sm">
-	<div class="flex flex-row md:w-3/4 mx-auto mt-10 lg:w-1/2">
-		<div class="basis-1/2 pl-5">
-			<ul>
-				<li><a href="/#">GDPR</a></li>
-				<li><a href="/#">Obchodní podmínky</a></li>
-				<li><a href="/#">TEST</a></li>
-			</ul>
-		</div>
-		<div class="basis-1/2 justify-end flex pr-5">
-			<ul>
-			<li><a href="/#">TEST</a></li>
-			<li><a href="/#">TEST</a></li>
-			<li><a href="/#">TEST</a></li>
-			</ul>
-		</div>
-	</div>
+<script lang="ts">
+	import { writable } from 'svelte/store';
+	import { page } from '$app/stores';
 
-	<div class="grid p-4 md:grid-cols-5 mx-auto w-3/4 my-5 text-white copy">
-		<div class="grid col-span-2">
-			<p>
-				Vytvořeno s
-				<a
-					class="items-center mt-3 sm:mt-0"
-					target="_blank"
-					href="https://www.mikigroup.cz/"
-					><i class="fa fa-regular fa-hand-spock" /> Mikigroup™
+	// Získáme nastavení z page data
+	$: settings = $page.data.settings;
+	$: footerText = settings?.appearance?.footerText || '© Šťastné srdce s.r.o. 2022 - 2025. Všechna práva vyhrazena.';
+</script>
+
+<footer class="bg-gradient-to-r from-gray-50 to-gray-100 shadow-inner pt-20">
+	<div class="max-w-7xl mx-auto px-4 py-6">
+		<div class="flex flex-col md:flex-row justify-between items-center gap-4">
+			<div class="flex flex-col md:flex-row items-center justify-center gap-2 md:gap-6 md:pb-0">
+				<a href="/obchodni-podminky" class="text-gray-600 hover:text-green-700 transition-colors duration-200 text-sm font-medium hover:underline text-center">
+					Obchodní podmínky
 				</a>
-				- core0.9a
-			</p>
+				<a href="/kontakt" class="text-gray-600 hover:text-green-700 transition-colors duration-200 text-sm font-medium hover:underline text-center">
+					Kontakt
+				</a>
+				<a href="/gdpr" class="text-gray-600 hover:text-green-700 transition-colors duration-200 text-sm font-medium hover:underline text-center">
+					GDRP
+				</a>
+			</div>
+
+			<div class="text-gray-500 text-xs md:text-sm mt-5 md:mt-0">
+				<p>{footerText}</p>
+			</div>
 		</div>
-		<div class="grid justify-end col-span-3 text-sm copy">
-			<p>Malý Leo 2022-2024 ver_1.0a</p>
+
+		<div class="mt-4 pt-4 border-t border-gray-200 text-center text-xs text-gray-400">
+			<div class="flex items-center justify-center space-x-2">
+				<span class="text-gray-500 text-xs">Vytvořeno s</span>
+				<a href="https://www.malyleo.cz/" target="_blank" class="text-sm flex items-center">
+					<i class="fa fa-regular fa-hand-spock mr-1"></i> MalyLeo™
+				</a>
+				<span class="text-gray-400 text-xs">core1.1b</span>
+			</div>
+			<p>Tento web používá cookies pro lepší uživatelský zážitek.</p>
 		</div>
 	</div>
-
-</footer>-->
-
-<footer class="footer footer-center p-10 bg-gradient-to-b from-gray-700 from-60% to-gray-800 text-white">
-	<nav class="grid grid-flow-col gap-4">
-		<a class="link link-hover">GDPR</a>
-		<a class="link link-hover">Obchodní podmínky</a>
-	</nav>
-	<nav class="">
-		<div class="grid grid-flow-col gap-4">
-			<a>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					class="fill-current">
-					<path
-						d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path>
-				</svg>
-			</a>
-			<a>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					class="fill-current">
-					<path
-						d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path>
-				</svg>
-			</a>
-			<a>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					class="fill-current">
-					<path
-						d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"></path>
-				</svg>
-			</a>
-		</div>
-	</nav>
-	<aside>
-		<p>Malý Leo™ - Vytvořil
-			<a
-				class="items-center mt-3 sm:mt-0"
-				target="_blank"
-				href="https://www.mikigroup.cz/"
-			><i class="fa fa-regular fa-hand-spock" /> Mikigroup
-			</a>
-			- core0.9b</p>
-	</aside>
 </footer>
-
-
-<style lang="scss">
-  @use "$lib/styles/variables" as *;
-
-	.copy {
-		font-size: 0.7rem;
-	}
-
-</style>

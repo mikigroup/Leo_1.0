@@ -3,21 +3,27 @@
 	import { CartItemsStore, totalPiecesStore } from "$lib/stores/store";
 	import { page } from "$app/stores";
 	import Modal from "./Modal.svelte";
-	import DeleteModal from "./DeleteModal.svelte";
 	import { onMount } from "svelte";
 	import { goto } from "$app/navigation";
 	import { enhance } from "$app/forms";
+	import { validateProfileForInvoicing, getProfileValidationMessage } from "$lib/utils/profileValidation";
+	import { formatDateToCzech } from "$lib/utils/formatting";
 
 	export let data;
 	export let form: Actions;
 
-	let { session, supabase } = data;
+	let { session, supabase, user } = data;
 	let loading = false;
-	let showModal = false;
-	let showDeleteModal = false;
-	let itemToDelete: { cartItemId: string; variantId: string; description: string } | null = null;
+	let modal: Modal;
+	let isSubmitting = false;
+	let errorMessage = '';
+	let orderDetails = {
+		totalPieces: 0,
+		totalPrice: 0
+	};
+	let profileData: any = null;
 
-	$: ({ session, supabase } = data);
+	$: ({ session, supabase, user } = data);
 
 	// Store subscriptions
 	let cartItems: any[] = [];
@@ -37,46 +43,26 @@
 		);
 	}, 0);
 
-	function handleQuantityChange(cartItemId: string, variantId: string, quantity: number, description: string) {
-		if (quantity === 0) {
-			itemToDelete = { cartItemId, variantId, description };
-			showDeleteModal = true;
-		} else {
-			CartItemsStore.updateQuantity(cartItemId, variantId, quantity);
-		}
-	}
-
-	function handleRemoveClick(cartItemId: string, variantId: string, description: string) {
-		itemToDelete = { cartItemId, variantId, description };
-		showDeleteModal = true;
-	}
-
-	function confirmDelete() {
-		if (itemToDelete) {
-			CartItemsStore.removeItem(itemToDelete.cartItemId, itemToDelete.variantId);
-			itemToDelete = null;
-		}
-	}
-
 	async function getProfile() {
-		if (!session?.user?.id) return;
+		if (!user?.id) return;
 
 		try {
 			loading = true;
-			let first_name: string;
-			let last_name: string;
 
 			const { data: customerData, error } = await supabase
 				.from("profiles")
-				.select("first_name, last_name")
-				.eq("id", session.user.id)
+				.select(`
+					first_name, last_name, street, street_number, city, zip_code, 
+					telephone, delivery_method, payment_method, company, ico, dic, 
+					allergies, allergies_description
+				`)
+				.eq("id", user.id)
 				.single();
 
 			if (error && error.code !== "406") throw error;
 
 			if (customerData) {
-				first_name = customerData.first_name;
-				last_name = customerData.last_name;
+				profileData = customerData;
 			}
 		} catch (error) {
 			console.error("Error fetching profile:", error);
@@ -85,15 +71,48 @@
 		}
 	}
 
-	function handleOrderSubmit() {
-		return async ({ result }) => {
-			if (result.type === "success") {
-				CartItemsStore.clear();
-				await goto("/thankyou");
-			} else {
-				console.error("Chyba při odesílání objednávky - page", result.error);
+	function handleSubmit(e: Event) {
+		e.preventDefault(); // Zastavíme výchozí odeslání formuláře
+		console.log('handleSubmit called');
+		
+		if (isSubmitting) {
+			console.log('Already submitting, returning');
+			return;
+		}
+
+		// Validace profilu před zobrazením modálu
+		if (profileData && user?.email) {
+			const validationResult = validateProfileForInvoicing({
+				...profileData,
+				email: user.email
+			});
+
+			if (!validationResult.isComplete) {
+				errorMessage = `Pro vytvoření objednávky musíte mít vyplněné všechny povinné údaje v <a href="/profile" class="text-blue-600 underline">profilu</a>. Chybí: ${validationResult.missingFields.join(', ')}.`;
+				return;
 			}
+		} else {
+			errorMessage = 'Nepodařilo se načíst údaje z profilu. Zkuste stránku obnovit.';
+			return;
+		}
+		
+		orderDetails = {
+			totalPieces,
+			totalPrice
 		};
+		console.log('Order details set:', orderDetails);
+		
+		// Vyčistíme případnou chybovou zprávu, protože validace prošla
+		errorMessage = '';
+		
+		// Zobrazíme modální okno pro potvrzení
+		console.log('Showing modal');
+		if (modal) {
+			modal.show();
+			console.log('Modal shown');
+		} else {
+			console.error('Modal component not found');
+		}
 	}
 
 	function truncateText(text: string, maxLength: number) {
@@ -104,17 +123,52 @@
 	onMount(() => {
 		getProfile();
 	});
+
+	const { generalSettings } = data;
+
+
 </script>
 
 <svelte:head>
-	<title>Šťastné srdce - Košík</title>
+	<title>{generalSettings?.shopName ?? 'Obchod'} - Košík</title>
 	<meta name="description" content="Košík" />
 </svelte:head>
 
 <main>
 	<section>
 		{#if $page.data.session}
-			<form method="POST" action="?/sendOrder" use:enhance={handleOrderSubmit}>
+			<form
+				method="POST"
+				action="?/sendOrder"
+				on:submit|preventDefault={handleSubmit}
+				use:enhance={() => {
+					return async ({ result }) => {
+						console.log('Form action result:', result);
+						
+						if (result.type === 'success' && result.data?.success) {
+							console.log('Order successful, clearing cart...');
+							CartItemsStore.clear();
+							
+							const orderId = result.data?.orderId;
+							if (!orderId) {
+								console.error('Missing order ID in response:', result);
+								errorMessage = 'Chyba: Číslo objednávky není k dispozici';
+								return;
+							}
+							
+							const redirectUrl = `/thankyou?order=${orderId}`;
+							console.log('Redirecting to:', redirectUrl);
+							await goto(redirectUrl, { replaceState: true });
+						} else {
+							console.error('Order submission error:', result);
+							errorMessage = result.data?.message || 'Došlo k chybě při zpracování objednávky.';
+						}
+						
+						isSubmitting = false;
+					};
+				}}
+				class="space-y-4">
+				<input type="hidden" name="cartItems" value={JSON.stringify(cartItems)} />
 				<div
 					class="max-w-screen-xl px-4 py-16 mx-auto mt-20 mb-10 rounded-lg bg-stone-100">
 					<h1
@@ -133,16 +187,13 @@
 							</div>
 						{:else}
 							{#each cartItems as cartItem, i (cartItem.id)}
-								<div class="mb-5 border-2 rounded-lg bg-stone-100">
+								<div class="mb-5 border rounded-lg bg-stone-100">
 									<div class="text-center rounded-lg bg-slate-300">
 										<p><strong>Den</strong></p>
 									</div>
 									<div class="m-2 text-center">
 										<p>
-											{new Date(cartItem.date).toLocaleDateString("cs-CZ", {
-												month: "long",
-												day: "numeric"
-											})}
+											{formatDateToCzech(cartItem.date)}
 										</p>
 									</div>
 									<hr />
@@ -155,15 +206,16 @@
 									<div class="m-5">
 										{#each cartItem.variants as variant}
 											<div class="flex justify-between items-center mb-2">
-                        <span class="mr-2">
-                          {variant.variant_number}. {truncateText(
-													variant.description,
-													50
-												)}
-                        </span>
+												<span class="mr-2">
+													{variant.variant_number}. {truncateText(
+														variant.description,
+														50
+													)}
+												</span>
 												<button
 													class="hover:animate-spin"
-													on:click|preventDefault={() => handleRemoveClick(cartItem.id, variant.id, variant.description)}>
+													on:click|preventDefault={() =>
+														CartItemsStore.removeItem(cartItem.id, variant.id)}>
 													X
 												</button>
 											</div>
@@ -179,7 +231,12 @@
 												max="99"
 												type="number"
 												bind:value={variant.quantity}
-												on:change={() => handleQuantityChange(cartItem.id, variant.id, variant.quantity, variant.description)}
+												on:change={() =>
+													CartItemsStore.updateQuantity(
+														cartItem.id,
+														variant.id,
+														variant.quantity
+													)}
 												class="w-16 text-lg text-center bg-white border rounded-lg focus:outline-none focus:border-green-600" />
 										{/each}
 									</div>
@@ -201,9 +258,9 @@
 
 					<!-- Desktop cart header -->
 					<div
-						class="hidden max-w-screen-2xl px-4 py-4 mx-auto mt-5 border-2 rounded-lg md:grid">
+						class="hidden max-w-screen-2xl px-4 py-2 mx-auto mt-5 border rounded-lg md:grid border-gray-300 bg-slate-300">
 						<div
-							class="grid items-center grid-cols-12 p-2 pl-5 text-lg border rounded-lg bg-slate-300 text-center font-light">
+							class="grid items-center grid-cols-12 pl-5 text-lg rounded-lg text-center font-light">
 							<div class="col-span-1 border-r border-white">
 								<p>Den</p>
 							</div>
@@ -224,7 +281,7 @@
 
 					<!-- Desktop cart -->
 					<div
-						class="hidden max-w-screen-2xl p-4 mx-auto border-2 rounded-lg md:grid bg-orange-50">
+						class="hidden max-w-screen-2xl p-4 mx-auto border border-gray-300 rounded-lg md:grid bg-orange-50">
 						{#if !cartItems.length}
 							<div
 								class="flex flex-col items-center justify-center w-full overflow-hidden">
@@ -235,8 +292,8 @@
 						{:else}
 							{#each cartItems as cartItem (cartItem.id)}
 								<div
-									class="items-center hidden pl-5 text-lg border-2 rounded-lg md:grid-cols-12 bg-stone-100 md:grid py-7 my-1">
-									<div class="col-span-1 text-center border-r-2">
+									class="items-center hidden pl-5 text-lg border border-gray-400 rounded-lg md:grid-cols-12 bg-stone-100 md:grid py-7 my-1">
+									<div class="col-span-1 text-center border-r">
 										<p class="">
 											{new Date(cartItem.date).toLocaleDateString("cs-CZ", {
 												month: "long",
@@ -244,14 +301,14 @@
 											})}
 										</p>
 									</div>
-									<div class="col-span-2 pl-5 border-r-2">
+									<div class="col-span-2 pl-5 border-r">
 										<p>{truncateText(cartItem.soup, 30)}</p>
 									</div>
 									<div
-										class="col-span-5 pl-5 border-r-2 mr-1 flex gap-2 flex-col">
+										class="col-span-5 pl-5 border-r mr-1 flex gap-2 flex-col">
 										{#each cartItem.variants as variant, index}
 											<div class="">
-												{index + 1}. {truncateText(variant.description, 50)}
+												{variant.variant_number}. {truncateText(variant.description, 50)}
 											</div>
 										{/each}
 									</div>
@@ -265,12 +322,17 @@
 														max="99"
 														type="number"
 														bind:value={variant.quantity}
-														on:change={() => handleQuantityChange(cartItem.id, variant.id, variant.quantity, variant.description)}
+														on:change={() =>
+															CartItemsStore.updateQuantity(
+																cartItem.id,
+																variant.id,
+																variant.quantity
+															)}
 														class="w-full text-lg text-center bg-white border rounded-lg focus:outline-none focus:border-green-600" />
 												</div>
 											{/each}
 										</div>
-										<div class="flex flex-col gap-11 xl:gap-2 justify-center">
+										<div class="flex flex-col gap-11 xl:gap-7 justify-center">
 											{#each cartItem.variants as variant}
 												<div class="">
 													{(variant.price || 0) * (variant.quantity || 0)} Kč
@@ -279,12 +341,13 @@
 										</div>
 									</div>
 
-									<div class="col-span-1 flex flex-col gap-11 xl:gap-2">
+									<div class="col-span-1 flex flex-col gap-11 xl:gap-7">
 										{#each cartItem.variants as variant}
 											<button
 												type="button"
 												class="hover:animate-spin"
-												on:click|preventDefault={() => handleRemoveClick(cartItem.id, variant.id, variant.description)}>
+												on:click|preventDefault={() =>
+													CartItemsStore.removeItem(cartItem.id, variant.id)}>
 												X
 											</button>
 										{/each}
@@ -296,11 +359,11 @@
 
 					<!-- Total and checkout -->
 					{#if cartItems.length}
-						<div class="mt-5 border-2 rounded-lg">
-							<div class="grid p-5 border-b-2">
+						<div class="mt-5 border rounded-lg border-gray-300">
+							<div class="grid p-5 border-b">
 								<label for="note">Poznámka</label>
 								<textarea
-									class="bg-gray-50 border rounded-lg block w-full p-2.5 focus:outline-none focus:border-green-600 mb-5"
+									class="bg-gray-50 border rounded-lg block w-full p-2.5 focus:outline-none focus:border-green-600 mb-5 border-gray-300"
 									id="note"
 									name="note"
 									rows="4"
@@ -308,7 +371,7 @@
 									placeholder="poznámka k objednávce" />
 							</div>
 
-							<div class="grid p-5 border-b-2 justify-items-end">
+							<div class="grid p-5 border-b justify-items-end">
 								{#if $page.data.session}
 									<p class="text-sm text-gray-500">
 										Máte již vyplněný
@@ -325,28 +388,31 @@
 								</p>
 							</div>
 
+							{#if errorMessage}
+								<div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+									<p class="text-red-700">{@html errorMessage}</p>
+								</div>
+							{/if}
+
 							<div class="m-5">
 								<button
-									on:click={() => (showModal = true)}
 									type="button"
-									class="w-full px-4 py-2 text-center text-white bg-green-800 border rounded-lg shadow-md hover:border-black">
-									<span>Potvrzení košíku</span>
+									class="w-full px-4 py-2 text-base font-semibold text-center text-white transition duration-200 ease-in-out transform bg-green-800 rounded-lg shadow-md hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+									disabled={isSubmitting || cartItems.length === 0}
+									on:click={handleSubmit}
+								>
+									{#if isSubmitting}
+										<span class="inline-flex items-center">
+											<svg class="w-4 h-4 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+												<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+												<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+											</svg>
+											Odesílám objednávku...
+										</span>
+									{:else}
+										Odeslat objednávku
+									{/if}
 								</button>
-
-								<Modal bind:showModal>
-									<input
-										type="hidden"
-										name="cartItems"
-										value={JSON.stringify(cartItems)} />
-									<div>
-										<input
-											formaction="?/sendOrder"
-											type="submit"
-											class="w-full px-4 py-2 text-center text-white bg-green-800 border rounded-lg shadow-md hover:border-black"
-											value={loading ? "Odesílá se..." : "Odeslat"}
-											disabled={loading} />
-									</div>
-								</Modal>
 							</div>
 						</div>
 					{/if}
@@ -358,11 +424,30 @@
 			</div>
 		{/if}
 	</section>
-</main>
 
-<DeleteModal
-	bind:showModal={showDeleteModal}
-	title="Odstranit položku"
-	message={itemToDelete ? `Opravdu chcete odstranit "${truncateText(itemToDelete.description, 50)}" z košíku?` : ''}
-	onConfirm={confirmDelete}
-/>
+	<Modal 
+		bind:this={modal} 
+		on:close={() => {
+			// Nepotřebujeme čistit errorMessage zde, protože validační chyby se zobrazují před modálem
+			if (modal) modal.close();
+		}}
+		on:confirm={() => {
+			isSubmitting = true;
+			const form = document.querySelector('form');
+			if (form) {
+				modal?.close();
+				form.requestSubmit();
+			}
+		}}
+	>
+		{#if errorMessage}
+			<div class="p-4 mb-4 text-red-800 bg-red-100 rounded-lg">
+				{errorMessage}
+			</div>
+		{:else}
+			<div class="space-y-4">
+				<h3 class="text-xl font-semibold mb-4">Opravdu chcete odeslat objednávku?</h3>				
+			</div>
+		{/if}
+	</Modal>
+</main>

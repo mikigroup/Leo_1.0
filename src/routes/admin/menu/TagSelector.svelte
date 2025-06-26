@@ -1,169 +1,137 @@
 <script lang="ts">
-	import { createEventDispatcher } from "svelte";
-	import type { Allergen, Ingredient, TagType, TagUpdateEvent } from "$lib/types/menu";
 
-	// Props s přesnými typy
-	export let selectedTags: (Allergen | Ingredient)[] = [];
-	export let availableTags: (Allergen | Ingredient)[] = [];
-	export let type: TagType;
+	// Přímé bindování místo event dispatcheru
+	export let selectedTags:
+		| Database["public"]["Tables"]["allergens"]["Row"][]
+		| Database["public"]["Tables"]["ingredients"]["Row"][] = [];
+	export let availableTags:
+		| Database["public"]["Tables"]["allergens"]["Row"][]
+		| Database["public"]["Tables"]["ingredients"]["Row"][] = [];
 
-	// Event dispatcher s konkrétním typem
-	const dispatch = createEventDispatcher<{
-		update: TagUpdateEvent;
-	}>();
-
-	// State
+	// State pro input a filtrované tagy
 	let inputValue = "";
-	let filteredTags: (Allergen | Ingredient)[] = [];
+	let filteredTags: typeof availableTags = [];
 
-	// Zajištění inicializace polí
+	// Reaktivní deklarace pro filtrování dostupných tagů
 	$: {
-		selectedTags = Array.isArray(selectedTags) ? selectedTags : [];
-		availableTags = Array.isArray(availableTags) ? availableTags : [];
-	}
-
-	// Filtrování tagů
-	$: {
-		filteredTags = availableTags.filter(tag =>
-			tag &&
-			tag.name &&
-			tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
-			!selectedTags.some(selected => selected.id === tag.id)
+		filteredTags = availableTags.filter(
+			(tag) =>
+				tag.name.toLowerCase().includes(inputValue.toLowerCase()) &&
+				!selectedTags.some((selected) => selected.id === tag.id)
 		);
 	}
 
-	function addTag(tag: Allergen | Ingredient) {
-		if (!tag?.id || !tag?.name) return;
+	// Přímá manipulace s bindovaným polem
+	function toggleTag(tag) {
+		const newTags = selectedTags.some(t => t.id === tag.id)
+			? selectedTags.filter(t => t.id !== tag.id)
+			: [...selectedTags, tag];
 
-		if (!selectedTags.some(selected => selected.id === tag.id)) {
+		// Aktualizujte lokální proměnnou
+		selectedTags = newTags;
+
+		console.log("Aktualizované selectedTags:", selectedTags);
+	}
+
+	// Funkce pro přidání tagu z textového vstupu
+	function addTag(tag: (typeof availableTags)[number]) {
+		if (!selectedTags.some((selected) => selected.id === tag.id)) {
 			selectedTags = [...selectedTags, tag];
-			dispatch("update", {
-				tags: selectedTags,
-				type
-			});
 		}
-
 		inputValue = "";
 	}
 
-	function removeTag(tag: Allergen | Ingredient) {
-		selectedTags = selectedTags.filter(t => t.id !== tag.id);
-		dispatch("update", {
-			tags: selectedTags,
-			type
-		});
-	}
-
+	// Handle keydown event pro přidání tagů
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === "Enter" && inputValue && filteredTags.length > 0) {
+		if (event.key === "Enter" && inputValue) {
 			event.preventDefault();
-			addTag(filteredTags[0]);
+			if (filteredTags.length > 0) {
+				addTag(filteredTags[0]);
+			}
 		}
 	}
 </script>
 
 <div class="tag-selector">
-	<div class="selected-tags">
-		{#each selectedTags as tag (tag.id)}
-      <span class="tag">
-        {tag.name}
-				<button
-					type="button"
-					on:click={() => removeTag(tag)}
-					class="tag-remove"
-					aria-label="Odstranit tag">
-          &times;
-        </button>
-      </span>
+	<!-- Alternativní UI s tlačítky pro snadnější výběr -->
+	<div class="quick-select mb-3 flex flex-wrap gap-2">
+		{#each availableTags as tag (tag.id)}
+			<button
+				type="button"
+				class="text-sm rounded-full border px-3 py-1"
+				class:bg-teal-800={selectedTags.some(t => t.id === tag.id)}
+				class:text-white={selectedTags.some(t => t.id === tag.id)}
+				class:border-green-700={selectedTags.some(t => t.id === tag.id)}
+				class:bg-gray-100={!selectedTags.some(t => t.id === tag.id)}
+				class:text-gray-700={!selectedTags.some(t => t.id === tag.id)}
+				class:border-gray-300={!selectedTags.some(t => t.id === tag.id)}
+				on:click={() => toggleTag(tag)}>
+				{tag.number ? `${tag.number}. ` : ""}{tag.name}
+			</button>
 		{/each}
 	</div>
+	<hr>
+	<!-- Vybrané tagy -->
+<!--	<div class="selected-tags my-5">
+		{#each selectedTags as tag (tag.id)}
+			<span class="tag p-5">
+				{tag.name}
+			</span>
+		{/each}
+	</div>-->
 
-	<input
+	<!-- Textový vstup pro filtrování -->
+	<!--<input
 		type="text"
 		bind:value={inputValue}
 		on:keydown={handleKeydown}
-		placeholder={`Přidat ${type === 'allergen' ? 'alergen' : 'ingredienci'}...`}
-		class="tag-input"
-	/>
+		placeholder="Přidat tag..." />-->
 
-	{#if inputValue && filteredTags.length > 0}
+	<!-- Návrhy tagů -->
+	<!--{#if inputValue && filteredTags.length > 0}
 		<ul class="tag-suggestions">
 			{#each filteredTags as tag (tag.id)}
-				<li
-					on:click={() => addTag(tag)}
-					on:keydown={(e) => e.key === 'Enter' && addTag(tag)}
-					tabindex="0"
-					role="button"
-				>
-					{tag.name}
-				</li>
+				<li on:click={() => addTag(tag)}>{tag.name}</li>
 			{/each}
 		</ul>
-	{/if}
+	{/if}-->
 </div>
 
 <style>
     .tag-selector {
-        position: relative;
-        width: 100%;
+        /* Add your styles here */
     }
-
     .selected-tags {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
         margin-bottom: 0.5rem;
     }
-
     .tag {
         background-color: #e0e0e0;
         padding: 0.25rem 0.5rem;
         border-radius: 0.25rem;
         display: flex;
         align-items: center;
-        font-size: 0.875rem;
     }
-
-    .tag-remove {
+    .tag button {
         margin-left: 0.25rem;
         border: none;
         background: none;
         cursor: pointer;
-        padding: 0 0.25rem;
-        color: #666;
     }
-
-    .tag-remove:hover {
-        color: #000;
-    }
-
-    .tag-input {
-        width: 100%;
-        padding: 0.5rem;
-        border: 1px solid #ccc;
-        border-radius: 0.25rem;
-        margin-bottom: 0.25rem;
-    }
-
     .tag-suggestions {
-        position: absolute;
-        width: 100%;
         list-style-type: none;
         padding: 0;
         margin: 0;
         border: 1px solid #ccc;
-        border-radius: 0.25rem;
-        background-color: white;
         max-height: 200px;
         overflow-y: auto;
-        z-index: 10;
     }
-
     .tag-suggestions li {
         padding: 0.5rem;
         cursor: pointer;
     }
-
     .tag-suggestions li:hover {
         background-color: #f0f0f0;
     }

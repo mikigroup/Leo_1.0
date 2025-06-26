@@ -4,11 +4,21 @@
 	import MenuItemDetail from "../MenuItemDetail.svelte";
 	import type { PageData } from "./$types";
 	import type { Menu } from "$lib/types/menu";
-	import { ROUTES } from "$lib/stores/store";
+	import type { Database } from "$lib/types/database.types";
+	import AdminPageLayout from "$lib/component/AdminPageLayout.svelte";
+	import { formatDateToCzechShort } from "$lib/utils/formatting";
+	import {
+		createMenuVersion,
+		updateMenuAllergens,
+		createMenuVariant,
+		updateVariantAllergens,
+		updateVariantIngredients,
+		loadMenu
+	} from "$lib/services/menuService";
 
 	export let data: PageData;
-	let { menu, allAllergens, allIngredients, supabase } = data;
-	$: ({ menu, allAllergens, allIngredients, supabase } = data);
+	let { session, supabase, menu, allAllergens, allIngredients } = data;
+	$: ({ session, supabase, menu, allAllergens, allIngredients } = data);
 
 	let loading = false;
 	let updateMessage = "";
@@ -16,100 +26,75 @@
 
 	async function updateMenu() {
 		try {
+			// Explicitní kopie menu objektu pro ukládání
+			const menuToSave = JSON.parse(JSON.stringify(menu));
+
 			loading = true;
 			errorMessage = "";
 			updateMessage = "";
 
-			console.log('Odesílaná data:', JSON.stringify(menu, null, 2));
-
-			// Validace
-			if (!menu.date) {
-				errorMessage = "Datum je povinné";
-				return;
+			// Inicializace undefined polí jako prázdná pole
+			if (!menuToSave.allergens) menuToSave.allergens = [];
+			for (const variant of menuToSave.variants) {
+				if (!variant.allergens) variant.allergens = [];
+				if (!variant.ingredients) variant.ingredients = [];
 			}
 
-			// Vyfiltrujeme prázdné varianty
-			const validVariants = menu.variants.filter(v =>
-				v.description.trim() !== '' || v.price > 0
+			// 1. Vytvořit novou verzi menu
+			const menuVersionId = await createMenuVersion(supabase, {
+				id: menuToSave.id,
+				date: menuToSave.date,
+				soup: menuToSave.soup,
+				active: menuToSave.active,
+				notes: menuToSave.notes,
+				type: menuToSave.type,
+				nutri: menuToSave.nutri
+			});
+
+			console.log("Vytvořena nová verze menu s ID:", menuVersionId);
+
+			// 2. Aktualizace alergenů polévky
+			await updateMenuAllergens(
+				supabase,
+				menuToSave.id,
+				menuToSave.allergens.map((a: any) => a.id)
 			);
 
-			// Připravíme data pro odeslání
-			const menuData = {
-				...menu,
-				variants: validVariants.map((v, index) => ({
-					...v,
-					variant_number: (index + 1).toString()
-				}))
-			};
+			// 3. Vytvoření nových variant pro novou verzi menu
+			for (const variant of menuToSave.variants) {
+				// Vytvoříme novou variantu pro novou verzi
+				const insertedVariant = await createMenuVariant(supabase, {
+					menu_id: menuToSave.id,
+					menu_version_id: menuVersionId,
+					variant_number: variant.variant_number,
+					description: variant.description,
+					price: variant.price
+				});
 
-			// Aktualizace hlavního menu
-			const { error: menuError } = await supabase
-				.from("menus")
-				.update({
-					date: menuData.date,
-					soup: menuData.soup,
-					active: menuData.active,
-					notes: menuData.notes,
-					type: menuData.type,
-					nutri: menuData.nutri
-				})
-				.eq("id", menu.id);
+				// Přidání alergenů k nové variantě
+				await updateVariantAllergens(
+					supabase,
+					insertedVariant.id,
+					variant.allergens.map((a: any) => a.id)
+				);
 
-			if (menuError) throw menuError;
-
-			// Aktualizace variant
-			for (const variant of menuData.variants) {
-				const { error: variantError } = await supabase
-					.from("menu_variants")
-					.upsert({
-						menu_id: menu.id,
-						id: variant.id,
-						variant_number: variant.variant_number,
-						description: variant.description,
-						price: variant.price
-					});
-
-				if (variantError) throw variantError;
-
-				// Aktualizace alergenů
-				await supabase
-					.from("variant_allergens")
-					.delete()
-					.eq("variant_id", variant.id);
-
-				if (variant.allergens?.length) {
-					await supabase
-						.from("variant_allergens")
-						.insert(
-							variant.allergens.map(allergen => ({
-								variant_id: variant.id,
-								allergen_id: allergen.id
-							}))
-						);
-				}
-
-				// Aktualizace ingrediencí
-				await supabase
-					.from("variant_ingredients")
-					.delete()
-					.eq("variant_id", variant.id);
-
-				if (variant.ingredients?.length) {
-					await supabase
-						.from("variant_ingredients")
-						.insert(
-							variant.ingredients.map(ingredient => ({
-								variant_id: variant.id,
-								ingredient_id: ingredient.id
-							}))
-						);
-				}
+				// Přidání ingrediencí k nové variantě
+				await updateVariantIngredients(
+					supabase,
+					insertedVariant.id,
+					variant.ingredients.map((i: any) => i.id)
+				);
 			}
 
-			updateMessage = "Menu úspěšně aktualizováno!";
+			updateMessage = "Menu úspěšně upraveno";
+
+			// Načteme aktualizované menu pro zobrazení
+			const refreshedMenu = await loadMenu(supabase, menuToSave.id);
+			menu = refreshedMenu;
+
 		} catch (error) {
-			console.error("Error updating menu:", error);
-			errorMessage = error instanceof Error ? error.message : "Nastala chyba při aktualizaci menu";
+			console.error("Chyba při aktualizaci menu:", error);
+			errorMessage = "Chyba při úpravě menu: " + (error instanceof Error ? error.message : "Neznámá chyba");
 		} finally {
 			loading = false;
 		}
@@ -118,73 +103,65 @@
 	async function softDeleteMenu() {
 		try {
 			loading = true;
-			const { error } = await supabase.rpc("soft_delete_menu", {
+
+			const { data, error } = await supabase.rpc("soft_delete_menu", {
 				p_menu_id: menu.id
 			});
 
 			if (error) throw error;
 
-			await goto($ROUTES.ADMIN.MENU.LIST, { replaceState: true });
+			updateMessage = "Menu bylo úspěšně označeno jako smazané";
+			await goto("/admin/menu", { replaceState: true });
 		} catch (error) {
-			console.error("Error deleting menu:", error);
-			errorMessage = "Chyba při mazání menu";
+			console.error("Error soft-deleting menu:", error);
+			errorMessage = "Chyba při označování menu jako smazané";
 		} finally {
 			loading = false;
 		}
 	}
 
-	function handleUpdate(event: CustomEvent<Menu>) {
-		console.log('Received update:', JSON.stringify(event.detail, null, 2));
-		menu = event.detail;
+	async function back() {
+		await goto("/admin/menu");
 	}
+
+	// Formátovací funkce pro datum
+	
+	function formatDate(dateString: string | null): string {
+		if (!dateString) return 'N/A';
+		return formatDateToCzechShort(dateString);
+	}
+
+	// Definice akcí pro AdminPageLayout
+	$: actions = [
+		{
+			label: loading ? 'Ukládá se...' : 'Uložit změny',
+			onClick: updateMenu,
+			variant: 'primary' as const,
+			loading,
+			disabled: loading
+		},
+		{
+			label: loading ? 'Maže se...' : 'Smazat menu',
+			onClick: softDeleteMenu,
+			variant: 'danger' as const,
+			loading,
+			disabled: loading
+		}
+	];
 </script>
 
-<div class="relative p-5 overflow-x-auto"
-		 in:fly={{ y: 50, duration: 500 }}>
-	<div class="flex justify-between items-center mb-4">
-		<button
-			on:click={() => goto($ROUTES.ADMIN.MENU.LIST)}
-			class="btn btn-outline">
-			Zpět
-		</button>
+<AdminPageLayout
+	title="Detail menu"
+	subtitle="{formatDate(menu?.date)}"
+	backUrl="/admin/menu"
+	{actions}
+	successMessage={updateMessage}
+	errorMessage={errorMessage}
+	{loading}>
 
-		{#if updateMessage}
-			<div transition:fade class="bg-green-200 text-green-800 rounded p-2">
-				<span>{updateMessage}</span>
-			</div>
-		{/if}
-
-		{#if errorMessage}
-			<div transition:fade class="bg-red-200 text-red-800 rounded p-2">
-				<span>{errorMessage}</span>
-			</div>
-		{/if}
-
-		<div class="flex gap-2">
-			<button
-				disabled={loading}
-				on:click={updateMenu}
-				class="btn btn-outline">
-				{loading ? "Ukládá se..." : "Uložit změny"}
-			</button>
-			<button
-				class="btn btn-outline btn-error"
-				disabled={loading}
-				on:click={softDeleteMenu}>
-				{loading ? "Maže se..." : "Smazat menu"}
-			</button>
-		</div>
-	</div>
-
-	<div class="divider"></div>
-
-	<div class="rounded-xl p-4 md:p-10 bg-neutral-200">
-		<h2 class="text-2xl font-bold mb-6">Upravit Menu</h2>
-		<MenuItemDetail
-			bind:menu
-			{allAllergens}
-			{allIngredients}
-			on:update={handleUpdate}
-		/>
-	</div>
-</div>
+	<!-- Menu content -->
+	<MenuItemDetail
+		bind:menu
+		{allAllergens}
+		{allIngredients} />
+</AdminPageLayout>

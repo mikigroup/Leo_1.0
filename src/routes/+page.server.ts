@@ -1,13 +1,25 @@
-export const prerender = true; // pro rychlejsi nacitani - Core web vitals
-
-import { fail, redirect } from "@sveltejs/kit";
+export const prerender = "auto";
+export const trailingSlash = "always";
 import type { PageServerLoad } from "./$types";
 
-export const load: PageServerLoad = async ({ locals: { supabase } }) => {
-	const { data: texts } = await supabase
-		.from("texts")
-		.select("*")
-		.eq("page", "hlavni");
+export const load: PageServerLoad = async ({
+	parent,
+	locals: { supabase }
+}) => {
+	let texts = [];
+	try {
+		const { data, error } = await supabase
+			.from("texts")
+			.select("*")
+			.eq("page", "hlavni");
 
-	return { texts };
+		if (error) throw error;
+		texts = data || [];
+	} catch (error) {
+		console.error("Chyba při načítání textů:", error);
+	}
+
+	return {
+		texts
+	};
 };

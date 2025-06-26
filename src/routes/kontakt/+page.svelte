@@ -17,10 +17,14 @@
 	export let form: FormData;
 	export let data;
 
-	let { session, supabase } = data;
-	$: ({ session, supabase } = data);
+	let { session, supabase, settings } = data;
+	$: ({ session, supabase, settings } = data);
 
-	const key = ""; //nutno doplnit
+	// Extrahujeme data z settings
+	$: contact = settings?.contact || {};
+	$: business = settings?.business || {};
+
+	const key = "6LcNpg4qAAAAAPfGa_aQYUsxGK-fNgxQRVklEdnW";
 	const State = {
 		idle: "idle",
 		requesting: "requesting",
@@ -62,11 +66,11 @@
 
 <svelte:head>
 	<title>Šťastné srdce - Kontakt</title>
-	<meta name="description" content="Kontakt" />
+	<meta name="description" content="Kontaktujte nás - Šťastné srdce" />
 	<script src="https://www.google.com/recaptcha/api.js?render={key}"></script>
 </svelte:head>
 
-<div
+<main
 	class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
 	<div class="max-w-6xl mx-auto px-4 py-20">
 		<h1
@@ -80,46 +84,47 @@
 			<div class="space-y-8">
 				<!-- Info karta -->
 				<div
-					class="bg-white rounded-2xl shadow-xl p-8 space-y-6 transform transition-all duration-300 hover:shadow-2xl">
+					class="bg-white rounded-2xl shadow-xl p-8 space-y-6 transform transition-all duration-300 hover:shadow-2xl border border-gray-300">
 					<div class="flex items-center gap-3 border-b pb-4">
 						<Building2 class="w-6 h-6 text-green-700" />
 						<h2 class="text-2xl font-semibold text-gray-800">
-							Vaše firma s.r.o.
+							{business?.companyName || "Šťastné srdce s.r.o."}
 						</h2>
 					</div>
 
 					<div class="space-y-4">
 						<div class="flex items-center gap-3">
 							<MapPin class="w-5 h-5 text-green-700 flex-shrink-0" />
-							<p class="text-gray-600">Masarykovo náměstí 16, Jeseník 79001</p>
+							<p class="text-gray-600">
+								{contact?.address || business?.street} {business?.companyStreetNumber || business?.streetNumber}, {business?.city} {business?.zipCode}
+							</p>
 						</div>
 						<div class="flex items-center gap-3">
 							<Globe class="w-5 h-5 text-green-700 flex-shrink-0" />
 							<div>
-								<p class="text-gray-600">IČO: 12345678</p>
-								<p class="text-gray-600">DIČ: CZ12345678</p>
+								<p class="text-gray-600">IČO: {business?.ico || "21300674"}</p>
+								<p class="text-gray-600">DIČ: {business?.dic || "CZ21300674"}</p>
 							</div>
 						</div>
 						<div class="flex items-center gap-3">
 							<Phone class="w-5 h-5 text-green-700 flex-shrink-0" />
-							<p class="text-gray-600">777 111 222</p>
+							<div>
+								<p class="text-gray-600">{contact?.phone1 || "+420 724 448 377 Kamila Kučerová"}</p>
+								<p class="text-gray-600">{contact?.phone2 || "+420 732 722 115 Martin Forejt"}</p>
+							</div>
 						</div>
 						<div class="flex items-center gap-3">
 							<MailIcon class="w-5 h-5 text-green-700 flex-shrink-0" />
-							<p class="text-gray-600">info@vasefirma.cz</p>
-						</div>
-						<div class="flex items-center gap-3">
-							<Clock class="w-5 h-5 text-green-700 flex-shrink-0" />
-							<p class="text-gray-600">Po-Pá: 8:00 - 16:00</p>
+							<p class="text-gray-600">{contact?.email || "stastnesrdcekk@seznam.cz"}</p>
 						</div>
 					</div>
 				</div>
 
 				<!-- Mapa -->
-				<div class="bg-white rounded-2xl shadow-xl overflow-hidden h-64">
+				<div class="bg-white rounded-2xl shadow-xl overflow-hidden h-64 border border-gray-300">
 					<iframe
 						class="w-full h-full"
-						src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2552.348584609527!2d17.202060912513403!3d50.22939237143225!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4711f20709a4a457%3A0x9f2ac966867560dc!2s16%2C%20Masarykovo%20n%C3%A1m.%20167%2F1%2C%20790%2001%20Jesen%C3%ADk%201!5e0!3m2!1scs!2scz!4v1730980176886!5m2!1scs!2scz"
+						src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2548.593686167967!2d17.32430381590737!3d50.29951200610991!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4711eb61ad640179%3A0x480cac0b0efc56ef!2sPoto%C4%8Dn%C3%AD%2016%2C%20790%2084%20Mikulovice!5e0!3m2!1sen!2scz!4v1657788959804!5m2!1sen!2scz"
 						loading="lazy"
 						referrerpolicy="no-referrer-when-downgrade"
 						title="Šťastné srdce" />
@@ -127,7 +132,7 @@
 			</div>
 
 			<!-- Pravá strana - Kontaktní formulář -->
-			<div class="bg-white rounded-2xl shadow-xl p-8">
+			<div class="bg-white rounded-2xl shadow-xl p-8 border border-gray-300">
 				<h2 class="text-2xl font-semibold text-gray-800 mb-6">Napište nám</h2>
 				<form
 					method="POST"
@@ -301,4 +306,4 @@
 			</div>
 		</div>
 	</div>
-</div>
+</main>

@@ -1,103 +1,59 @@
-// +page.server.ts
-import { error } from "@sveltejs/kit";
+import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
-import { compareVersions } from "$lib/utils/menuVersioning";
-import type {
-	MenuWithRelations,
-	MenuResponse,
-	MenuLoadData,
-	MenuVersionWithChanges
-} from "$lib/types/menu";
+import { loadMenuList } from "$lib/services/menuService";
 
-export const load = (async ({ locals: { supabase }, url }) => {
+export const load: PageServerLoad = async ({
+	locals: { supabase, session },
+	url
+}) => {
+	if (!session) {
+		throw redirect(303, "/admin");
+	}
+
+	const page = parseInt(url.searchParams.get("page") || "1");
+	const searchQuery = url.searchParams.get("search") || "";
+	const sort = url.searchParams.get("sort") || "date_desc";
+	const itemsPerPage = parseInt(url.searchParams.get("itemsPerPage") || "50");
+
 	try {
-		const page = parseInt(url.searchParams.get("page") || "1");
-		const itemsPerPage = parseInt(url.searchParams.get("pageSize") || "10");
-		const searchQuery = url.searchParams.get("search") || "";
-		const filterDate = url.searchParams.get("date") || "";
-		const filterActive = url.searchParams.get("active") || "";
+		const {
+			menus: menusWithVersions,
+			totalItems,
+			currentPage,
+			totalPages
+		} = await loadMenuList(supabase, {
+			page,
+			searchQuery,
+			sort: sort as "date_desc" | "date_asc",
+			showDeleted: false,
+			itemsPerPage
+		});
 
-		const from = (page - 1) * itemsPerPage;
-		const to = from + itemsPerPage - 1;
+		// 6. Získáme nastavení tabulky z profilu
+		const { data: profileTableSettings, error: profileError } = await supabase
+			.from("profiles")
+			.select("table_settings_menus")
+			.eq("id", session.user.id)
+			.single();
 
-		// Nejdřív sestavíme základní dotaz
-		let query = supabase
-			.from('menus')
-			.select(`
-        *,
-        variants:menu_variants (
-          id,
-          variant_number,
-          description,
-          price,
-          allergens:variant_allergens (
-            allergen:allergens (*)
-          ),
-          ingredients:variant_ingredients (
-            ingredient:ingredients (*)
-          )
-        ),
-        current_version:menu_versions (*)
-      `, { count: 'exact' })
-			.eq('deleted', false);
-
-		// Přidáme filtry
-		if (searchQuery) {
-			query = query.or(`soup.ilike.%${searchQuery}%,variants.description.ilike.%${searchQuery}%`);
+		if (profileError) {
+			console.error("Error fetching profile:", profileError);
+			throw profileError;
 		}
-
-		if (filterDate) {
-			query = query.eq('date', filterDate);
-		}
-
-		if (filterActive !== '') {
-			query = query.eq('active', filterActive === 'true');
-		}
-
-		// Dokončíme dotaz s řazením a stránkováním
-		const { data: menus, error: menusError, count } = await query
-			.order('date', { ascending: false })
-			.range(from, to);
-
-		if (menusError) {
-			console.error('Error loading menus:', menusError);
-			throw error(500, 'Chyba při načítání menu');
-		}
-
-		// Zpracování verzí a změn
-		const processedMenus = menus?.map(menu => {
-			const currentVersion = menu.current_version?.[0];
-			const changes = currentVersion ? {
-				modified: [], // Zde můžete implementovat logiku pro detekci změn
-				added: []
-			} : null;
-
-			return {
-				...menu,
-				currentVersion: currentVersion ? {
-					...currentVersion,
-					changes
-				} : null
-			};
-		}) || [];
 
 		return {
-			menus: processedMenus,
-			pagination: {
-				page,
-				totalPages: Math.ceil((count || 0) / itemsPerPage),
-				totalItems: count,
-				itemsPerPage
-			},
-			filters: {
-				search: searchQuery,
-				date: filterDate,
-				active: filterActive
-			}
+			menus: menusWithVersions,
+			profileTableSettings,
+			currentPage,
+			totalPages,
+			totalItems,
+			itemsOnCurrentPage: menusWithVersions.length,
+			itemsPerPage, // Předáme do frontendu
+			searchQuery,
+			sort
 		};
-
-	} catch (err) {
-		console.error('Unexpected error in load function:', err);
-		throw error(500, 'Chyba při načítání dat');
+	} catch (error) {
+		console.error("Error in menu page server load:", error);
+		throw error;
 	}
-}) satisfies PageServerLoad;
+};

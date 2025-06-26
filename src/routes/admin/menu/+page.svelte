@@ -1,264 +1,501 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { fade } from "svelte/transition";
-	import type { Menu } from "$lib/types/menu";
-	import { formatVersionDate } from "$lib/utils/menuVersioning";
+	import { writable } from "svelte/store";
+	import {
+		createSvelteTable,
+		getCoreRowModel,
+		getSortedRowModel
+	} from "@tanstack/svelte-table";
+	import type {
+		ColumnDef,
+		TableOptions,
+		VisibilityState,
+		OnChangeFn,
+		SortingState
+	} from "@tanstack/svelte-table";
+	import { BarLoader } from "svelte-loading-spinners";
+	import { navigating } from "$app/stores";
+	import { fade, fly } from "svelte/transition";
 	import { ROUTES } from "$lib/stores/store";
+	import { formatDateToCzech, formatDateToCzechShort } from "$lib/utils/formatting";
 
 	export let data;
-	let { menus, pagination, filters } = data;
-	$: ({ menus, pagination, filters } = data);
 
-	interface Pagination {
-		page: number;
-		totalPages: number;
-		totalItems: number | null;
-		itemsPerPage: number;
+	// Destructure and reactive reassign data properties
+	let {
+		session,
+		supabase,
+		menus,
+		profileTableSettings,
+		currentPage,
+		totalPages,
+		totalItems,
+		itemsOnCurrentPage,
+		itemsPerPage,
+		searchQuery,
+		sort
+	} = data;
+	$: ({
+		session,
+		supabase,
+		menus,
+		profileTableSettings,
+		currentPage,
+		totalPages,
+		totalItems,
+		itemsOnCurrentPage,
+		itemsPerPage,
+		searchQuery,
+		sort
+	} = data);
+
+	let loading = false;
+	let searchInput = searchQuery;
+	let transitionKey = 0;
+
+	// Možnosti pro počet položek na stránce
+	const itemsPerPageOptions = [10, 25, 50, 100];
+	let selectedItemsPerPage = itemsPerPage;
+
+	// Navigate to new menu page
+	function newMenuPage() {
+		goto($ROUTES.ADMIN.MENU.NEW);
 	}
 
-	type Column = {
-		id: string;
-		label: string;
-		visible: boolean;
+	// Převede pole variant na jednoduchý textový řetězec
+	function formatVariantsText(variants) {
+		if (!Array.isArray(variants) || variants.length === 0) {
+			return ["Žádné varianty"];
+		}
+
+		return variants
+			.sort((a, b) => parseInt(a.variant_number) - parseInt(b.variant_number))
+			.map(v => `${v.variant_number}. ${v.description}`);
+	}
+
+	// Define column names and order
+	const columnNames: Record<string, string> = {
+		date: "Datum",
+		soup: "Polévka",
+		variants: "Hlavní jídla",
+		active: "Aktivní",
+		notes: "Poznámky",
+		type: "Typ",
+		nutri: "Nutriční informace",
 	};
 
-	let columns: Column[] = [
-		{ id: 'date', label: 'Datum', visible: true },
-		{ id: 'soup', label: 'Polévka', visible: true },
-		{ id: 'variants', label: 'Varianty', visible: true },
-		{ id: 'status', label: 'Stav', visible: true },
-		{ id: 'changes', label: 'Změny', visible: true },
-		{ id: 'actions', label: 'Akce', visible: true }
+	const columnOrder = [
+		"date",
+		"soup",
+		"variants",
+		"active",
+		"notes",
+		"type",
+		"nutri",
 	];
 
-	const pageSizeOptions = [5, 10, 20, 50];
-	let currentPageSize = pagination.itemsPerPage;
-	let searchInput = filters.search;
-	let dateFilter = filters.date;
-	let activeFilter = filters.active;
+	// Initialize visible columns based on profile settings or default to all columns
+	let visibleColumns: VisibilityState =
+		profileTableSettings?.table_settings_menus ??
+		columnOrder.reduce((obj, column) => {
+			obj[column] = true;
+			return obj;
+		}, {});
 
-	// Handlers
-	const handleSearch = () => updateUrlAndRefresh({
-		search: searchInput,
-		date: dateFilter,
-		active: activeFilter,
-		page: "1"
-	});
-
-	const clearFilters = () => {
-		searchInput = dateFilter = activeFilter = "";
-		handleSearch();
+	// Callback funkce pro aktualizaci viditelnosti sloupců
+	const setColumnVisibility: OnChangeFn<VisibilityState> = updater => {
+		if (updater instanceof Function) {
+			visibleColumns = updater(visibleColumns);
+		} else {
+			visibleColumns = updater;
+		}
+		options.update(old => ({
+			...old,
+			state: {
+				...old.state,
+				columnVisibility: visibleColumns,
+			},
+		}));
+		saveTableSettings(visibleColumns);
 	};
 
-	const handlePageSizeChange = () => updateUrlAndRefresh({
-		pageSize: currentPageSize.toString(),
-		page: "1"
-	});
+	// Save table settings to user profile
+	async function saveTableSettings(columnVisibility: VisibilityState) {
+		if (session?.user.id == undefined) {
+			console.error("Uživatel není přihlášen");
+			return;
+		}
 
-	$: startIndex = ((pagination?.page || 1) - 1) * (pagination?.itemsPerPage || 10) + 1;
-	$: endIndex = Math.min(
-		(pagination?.page || 1) * (pagination?.itemsPerPage || 10),
-		pagination?.totalItems || 0
-	);
-	$: totalCount = pagination?.totalItems || 0;
+		const { error } = await supabase
+			.from("profiles")
+			.update({ table_settings_menus: columnVisibility })
+			.eq("id", session.user.id);
 
-	const handlePageChange = (newPage: number) => {
-		if (newPage < 1 || newPage > pagination.totalPages) return;
-		updateUrlAndRefresh({ page: newPage.toString() });
-	};
+		if (error) {
+			console.error("Chyba při ukládání nastavení filtrů:", error);
+		}
+	}
 
-	function updateUrlAndRefresh(params: Record<string, string>) {
-		const url = new URL(window.location.href);
-		Object.entries(params).forEach(([key, value]) => {
-			if (value) {
-				url.searchParams.set(key, value);
-			} else {
-				url.searchParams.delete(key);
+	// Define table columns with TanStack column definition
+	const columns: ColumnDef<any>[] = columnOrder.map(key => ({
+		accessorKey: key,
+		id: key,
+		header: columnNames[key],
+		size: key === 'variants' ? 400 :
+			key === 'soup' ? 150 :
+				key === 'date' ? 100 :
+					key === 'active' ? 80 : 100,
+		enableSorting: false, // Vypnuto, protože řadíme na serveru
+		cell: info => {
+			const value = info.getValue();
+			if (key === "date") {
+				return formatDateToCzechShort(String(value ?? ''));
+			} else if (key === "variants") {
+				return value;
 			}
-		});
-		goto(url.toString());
+			return value ?? "";
+		}
+	}));
+
+
+	// Přidáme sloupec "Upravit"
+	columns.push({
+		id: 'actions',
+		header: 'Editovat',
+		size: 80,
+		enableSorting: false,
+		cell: info => {
+			return {
+				id: info.row.original.id,
+			};
+		}
+	});
+
+	// Create table options
+	const options = writable<TableOptions<any>>({
+		data: menus || [],
+		columns,
+		state: {
+			columnVisibility: visibleColumns,
+		},
+		onColumnVisibilityChange: setColumnVisibility,
+		getCoreRowModel: getCoreRowModel(),
+		enableColumnResizing: true,
+		columnResizeMode: 'onChange',
+		debugTable: false,
+	});
+
+	// Create Svelte table
+	$: table = createSvelteTable(options);
+
+	// Update data when it changes
+	$: if (menus) {
+		options.update(opts => ({
+			...opts,
+			data: menus,
+		}));
 	}
 
-	function getStatusClass(menu: Menu): string {
-		if (!menu.active) return 'text-error';
-		if (menu.currentVersion?.changes?.modified?.length) return 'text-warning';
-		return 'text-success';
+	// Navigate to previous page
+	async function previousPage() {
+		try {
+			loading = true;
+			if (currentPage > 1) {
+				transitionKey++;
+				await goto(`?page=${currentPage - 1}&search=${searchQuery}&itemsPerPage=${selectedItemsPerPage}&sort=${sort}`);
+			}
+		} catch (error) {
+			console.error("Chyba při načítání předchozí stránky:", error);
+		} finally {
+			loading = false;
+		}
 	}
+
+	// Navigate to next page
+	async function nextPage() {
+		try {
+			loading = true;
+			if (currentPage < totalPages) {
+				transitionKey++;
+				await goto(`?page=${currentPage + 1}&search=${searchQuery}&itemsPerPage=${selectedItemsPerPage}&sort=${sort}`);
+			}
+		} catch (error) {
+			console.error("Chyba při načítání další stránky:", error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	// Handle search
+	async function handleSearch() {
+		loading = true;
+		try {
+			await goto(`?search=${searchInput}&page=1&itemsPerPage=${selectedItemsPerPage}&sort=${sort}`);
+		} catch (error) {
+			console.error("Chyba při vyhledávání:", error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	// Handle change of items per page
+	async function handleItemsPerPageChange() {
+		loading = true;
+		try {
+			// Reset to first page when changing items per page
+			await goto(`?search=${searchQuery}&page=1&itemsPerPage=${selectedItemsPerPage}&sort=${sort}`);
+		} catch (error) {
+			console.error("Chyba při změně počtu položek na stránce:", error);
+		} finally {
+			loading = false;
+		}
+	}
+
+	// Handle sort change
+	function handleSort() {
+		const newSort = sort === 'date_desc' ? 'date_asc' : 'date_desc';
+		goto(`?search=${searchQuery}&page=1&itemsPerPage=${selectedItemsPerPage}&sort=${newSort}`);
+	}
+	
 </script>
 
-<div class="p-4">
-	<!-- Header -->
-	<div class="flex justify-between items-center mb-6">
-		<h1 class="text-2xl font-bold">Seznam menu</h1>
-		<a href={$ROUTES.ADMIN.MENU.NEW} class="btn btn-outline">Nové menu</a>
-	</div>
+<svelte:head>
+	<title>LEO - Menu</title>
+</svelte:head>
 
-	<!-- Filters Card -->
-	<div class="card shadow-xl mb-6 bg-gray-300">
-		<div class="card-body">
-			<!-- Search and Filters -->
-			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-				<div class="form-control">
-					<label class="label">Vyhledávání</label>
-					<input type="text" bind:value={searchInput}
-								 placeholder="Hledat v menu..."
-								 class="input input-bordered" />
-				</div>
+<div class="flex justify-between mb-4">
+	<div class="flex flex-col gap-2 md:flex-row items-center">
+		<button on:click={newMenuPage} class="btn btn-outline">
+			Vytvořit
+		</button>
 
-				<div class="form-control">
-					<label class="label">Datum</label>
-					<input type="date" bind:value={dateFilter}
-								 class="input input-bordered" />
-				</div>
-
-				<div class="form-control">
-					<label class="label">Stav</label>
-					<select bind:value={activeFilter} class="select select-bordered">
-						<option value="">Všechny stavy</option>
-						<option value="true">Aktivní</option>
-						<option value="false">Neaktivní</option>
-					</select>
-				</div>
-			</div>
-
-			<!-- Actions -->
-			<div class="flex flex-wrap justify-between items-center gap-4">
-				<div class="join">
-					<button class="btn btn-outline join-item" on:click={handleSearch}>
-						<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-						</svg>
-						Vyhledat
-					</button>
-					<button class="btn btn-outline join-item" on:click={clearFilters}>Vyčistit</button>
-				</div>
-
-				<div class="join">
-					<select bind:value={currentPageSize}
-									on:change={handlePageSizeChange}
-									class="select select-bordered join-item">
-						{#each pageSizeOptions as size}
-							<option value={size}>{size} na stránku</option>
-						{/each}
-					</select>
-
-					<div class="dropdown dropdown-end">
-						<button tabindex="0" class="btn join-item ">Sloupce</button>
-						<ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-							{#each columns as column}
-								<li>
-									<label class="label cursor-pointer">
-										<span class="label-text">{column.label}</span>
-										<input type="checkbox" class="checkbox" bind:checked={column.visible} />
-									</label>
-								</li>
-							{/each}
-						</ul>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Pagination -->
-	<div class="flex justify-center mt-4">
-		<div class="join">
-			<button class="join-item btn w-20"
-							disabled={pagination.page === 1}
-							on:click={() => handlePageChange(1)}>«</button>
-
-			<button class="join-item btn w-24"
-							disabled={pagination.page === 1}
-							on:click={() => handlePageChange(pagination.page - 1)}>‹</button>
-
-			{#each Array(pagination.totalPages) as _, i}
-				{#if i + 1 === 1 || i + 1 === pagination.totalPages ||
-				(i + 1 >= pagination.page - 1 && i + 1 <= pagination.page + 1)}
-					<button class="join-item btn"
-									class:btn-active={pagination.page === i + 1}
-									on:click={() => handlePageChange(i + 1)}>{i + 1}</button>
-				{:else if i + 1 === pagination.page - 2 || i + 1 === pagination.page + 2}
-					<button class="join-item btn btn-disabled">...</button>
-				{/if}
-			{/each}
-
-			<button class="join-item btn w-24"
-							disabled={pagination.page === pagination.totalPages}
-							on:click={() => handlePageChange(pagination.page + 1)}>›</button>
-
-			<button class="join-item btn w-20"
-							disabled={pagination.page === pagination.totalPages}
-							on:click={() => handlePageChange(pagination.totalPages)}>»</button>
-		</div>
-	</div>
-
-
-	<!-- Table -->
-	<div class="card shadow-xl overflow-x-auto bg-gray-200">
-		<div class="card-body p-0">
-			<table class="table table-zebra">
-				<thead>
-				<tr>
-					{#each columns as column}
-						{#if column.visible}
-							<th>{column.label}</th>
-						{/if}
-					{/each}
-				</tr>
-				</thead>
-				<tbody>
-				{#each menus as menu (menu.id)}
-					<tr class="hover" transition:fade>
-						{#if columns.find(c => c.id === 'date')?.visible}
-							<td>{formatVersionDate(menu.date)}</td>
-						{/if}
-						{#if columns.find(c => c.id === 'soup')?.visible}
-							<td>{menu.soup || '-'}</td>
-						{/if}
-						{#if columns.find(c => c.id === 'variants')?.visible}
-							<td>{menu.variants?.length || 0} variant(y)</td>
-						{/if}
-						{#if columns.find(c => c.id === 'status')?.visible}
-							<td>
-								<div class="badge" class:text-green-500={menu.active} class:text-red-500={!menu.active}>
-									{menu.active ? 'Aktivní' : 'Neaktivní'}
-								</div>
-							</td>
-						{/if}
-						{#if columns.find(c => c.id === 'changes')?.visible}
-							<td>
-								{#if menu.currentVersion?.changes}
-									<div class="space-x-2">
-										{#if menu.currentVersion.changes.modified?.length}
-												<span class="badge badge-warning">
-													{menu.currentVersion.changes.modified.length} změn
-												</span>
-										{/if}
-										{#if menu.currentVersion.changes.added?.length}
-												<span class="badge badge-success">
-													{menu.currentVersion.changes.added.length} nové
-												</span>
-										{/if}
-									</div>
-								{/if}
-							</td>
-						{/if}
-						{#if columns.find(c => c.id === 'actions')?.visible}
-							<td>
-								<a href={$ROUTES.ADMIN.MENU.EDIT(menu.id)} class="btn btn-ghost btn-xs">
-									upravit
-								</a>
-							</td>
-						{/if}
-					</tr>
-				{/each}
-				</tbody>
-			</table>
-			{#if menus.length === 0}
-				<div class="text-center py-8 text-base-content/60">
-					Žádná menu k zobrazení
-				</div>
-			{/if}
+		<div class="flex gap-2">
+			<input
+				type="text"
+				placeholder="Hledat..."
+				class="input input-bordered input-md w-full max-w-xs border-black"
+				bind:value={searchInput} />
+			<button
+				class="btn btn-outline"
+				on:click={handleSearch}
+				disabled={loading}>
+				{loading ? "Vyhledávám..." : "Vyhledat"}
+			</button>
 		</div>
 	</div>
 </div>
+
+<hr class="h-px my-8 bg-gray-200 border-0 dark:bg-gray-700" />
+
+<section>
+	<div class="join flex my-10 justify-center w-full ">
+		<button
+			class="join-item btn btn-outline w-1/3"
+			on:click={previousPage}
+			disabled={currentPage === 1}>
+			Předchozí stránka
+		</button>
+		<button
+			class="join-item btn btn-outline w-1/3"
+			on:click={nextPage}
+			disabled={currentPage === totalPages}>
+			Další stránka
+		</button>
+	</div>
+	<div class="flex flex-col md:flex-row justify-between items-center w-full my-4 gap-4">
+		<p>Celkový počet menu: {totalItems}</p>
+
+		<div class="flex items-center gap-2 text-nowrap">
+			<span>Položek na stránce:</span>
+			<select
+				class="select select-bordered select-sm"
+				bind:value={selectedItemsPerPage}
+				on:change={handleItemsPerPageChange}
+			>
+				{#each itemsPerPageOptions as option}
+					<option value={option}>{option}</option>
+				{/each}
+			</select>
+		</div>
+
+		<p>Stránka {currentPage} z {totalPages}</p>
+		<p>Zobrazeno {itemsOnCurrentPage} z {totalItems} menu</p>
+	</div>
+</section>
+
+<div class="flex justify-end dropdown mb-4">
+	<button class="btn btn-outline" tabindex="0">Sloupce</button>
+	<ul
+		tabindex="0"
+		class="p-2 shadow dropdown-content menu bg-base-100 rounded-box w-52">
+		{#each $table.getAllLeafColumns() as column}
+			{#if column.id !== 'actions'}
+				<li>
+					<label>
+						<input
+							type="checkbox"
+							checked={column.getIsVisible()}
+							on:change={column.getToggleVisibilityHandler()}
+						/>
+						{columnNames[column.id] || column.id}
+					</label>
+				</li>
+			{/if}
+		{/each}
+	</ul>
+</div>
+
+{#key transitionKey}
+	<section in:fade={{ duration: 300 }} out:fade={{ duration: 150 }}>
+		<div class="overflow-x-auto border border-gray-500 rounded-xl shadow-sm">
+			<table class="min-w-full divide-y divide-gray-200">
+				<thead class="bg-gray-300 border-b-gray-700 border">
+				{#each $table.getHeaderGroups() as headerGroup}
+					<tr>
+						{#each headerGroup.headers as header}
+							<th
+								class="px-4 py-3 uppercase tracking-wider {header.column.id === 'actions' ? 'text-right' : 'text-left'}"
+								style="width: {header.getSize()}px; position: relative;"
+							>
+								{#if header.column.id === 'date'}
+									<div
+										class="flex {header.column.id === 'actions' ? 'justify-end' : 'items-center'} cursor-pointer select-none"
+										on:click={handleSort}
+										role="button"
+										title="Seřadit podle data"
+									>
+										{header.column.columnDef.header}
+										<span class="ml-2">
+											{#if sort === 'date_asc'}
+												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-up"><path d="m18 15-6-6-6 6"/></svg>
+											{:else}
+												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down"><path d="m6 9 6 6 6-6"/></svg>
+											{/if}
+										</span>
+									</div>
+								{:else}
+									<div class="flex {header.column.id === 'actions' ? 'justify-end' : 'items-center'}">
+										{header.column.columnDef.header}
+									</div>
+								{/if}
+
+								{#if header.column.getCanResize()}
+									<div
+										class="resizer"
+										on:mousedown={header.getResizeHandler()}
+										on:touchstart={header.getResizeHandler()}
+										class:isResizing={header.column.getIsResizing()}
+									></div>
+								{/if}
+							</th>
+						{/each}
+					</tr>
+				{/each}
+				</thead>
+				<tbody class="bg-white divide-y divide-gray-200">
+				{#if $navigating || loading}
+					<tr>
+						<td colspan={$table.getVisibleLeafColumns().length} class="px-6 py-4">
+							<div class="loading-overlay flex justify-center">
+								<BarLoader size="120" color="black" unit="px" duration="1s" />
+							</div>
+						</td>
+					</tr>
+				{:else if menus && menus.length > 0}
+					{#each $table.getRowModel().rows as row, index}
+						<tr
+							class="hover:bg-cyan-700 hover:text-white transition-colors {index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'}"
+							in:fly={{ y: 50, duration: 300, delay: index * 50 }}
+						>
+							{#each row.getVisibleCells() as cell}
+								<td
+									class="px-4 py-3"
+									style="width: {cell.column.getSize()}px;"
+								>
+									{#if cell.column.id === "variants"}
+										<div class="variants-container">
+											{#each formatVariantsText(cell.getValue()) as variant, index}
+												<div class="variant-item">
+													{variant}{#if index < formatVariantsText(cell.getValue()).length - 1}<br>{/if}
+												</div>
+											{/each}
+										</div>
+									{:else if cell.column.id === "date"}
+										{formatDateToCzechShort(String(cell.getValue() ?? ''))}
+									{:else if cell.column.id === "active"}
+										{cell.getValue() ? "ANO" : "NE"}  <!-- Přidáno speciální formátování -->
+									{:else if cell.column.id === "actions"}
+										<div class="flex justify-end">
+											<a href="/admin/menu/{row.original.id}" data-sveltekit-preload-data class="font-medium hover:underline">
+												Upravit
+											</a>
+										</div>
+									{:else}
+										{cell.getValue()}
+									{/if}
+								</td>
+							{/each}
+						</tr>
+					{/each}
+				{:else}
+					<tr>
+						<td colspan={$table.getVisibleLeafColumns().length} class="px-6 py-4 text-center">
+							Žádná menu
+						</td>
+					</tr>
+				{/if}
+				</tbody>
+			</table>
+		</div>
+	</section>
+{/key}
+
+<style>
+    .truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .resizer {
+        position: absolute;
+        right: 0;
+        top: 0;
+        height: 100%;
+        width: 5px;
+        background: rgba(0, 0, 0, 0.1);
+        cursor: col-resize;
+        user-select: none;
+        touch-action: none;
+    }
+
+    .resizer.isResizing {
+        background: rgba(0, 0, 0, 0.2);
+        opacity: 1;
+    }
+
+    @media (hover: hover) {
+        .resizer {
+            opacity: 0;
+        }
+
+        *:hover > .resizer {
+            opacity: 1;
+        }
+    }
+
+    @media (max-width: 768px) {
+        :global(.loading-overlay) {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        /* Responzivní úpravy pro mobilní zobrazení */
+        table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>

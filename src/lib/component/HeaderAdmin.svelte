@@ -3,6 +3,7 @@
 	import { readable } from "svelte/store";
 	import { Icon, FaceSmile } from "svelte-hero-icons";
 	import { ROUTES } from "$lib/stores/store";
+	import { createDateTimeFormatter } from "$lib/utils/formatting";
 
 	export let data;
 	let { supabase, session, user } = data;
@@ -12,8 +13,8 @@
 		try {
 			const { data: profile, error } = await supabase
 				.from("profiles")
-				.select("username")
-				.eq("id", session.user.id)
+				.select("first_name")
+				.eq("id", user.id)
 				.single();
 			if (error) {
 				console.error("Error fetching profile:", error);
@@ -37,12 +38,14 @@
 		"Sobota"
 	];
 
-	const formatterDate = new Intl.DateTimeFormat("cs", {
+
+	
+	const formatterDate = createDateTimeFormatter("cs", {
 		month: "short",
 		day: "numeric"
 	});
 
-	const formatterTime = new Intl.DateTimeFormat("cs", {
+	const formatterTime = createDateTimeFormatter("cs", {
 		hour12: false,
 		hour: "numeric",
 		minute: "2-digit"
@@ -89,7 +92,7 @@
 </script>
 
 <nav class="m-2" data-sveltekit-preload-data="hover">
-	<div class="navbar border-slate-600 border rounded-2xl !py-0 bg-sky-500">
+	<div class="navbar rounded-2xl !py-0 bg-[#00adad] antialiased text-[#0A0A0A]">
 		<div class="navbar-start">
 			<div class="dropdown">
 				<div tabindex="0" role="button" class="btn btn-ghost btn-circle">
@@ -108,25 +111,26 @@
 				<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 				<ul
 					tabindex="0"
-					class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-					<li><a href="/">Eshop</a></li>
-					<li><a href={$ROUTES.ADMIN.BASE}>Nástěnka</a></li>
-					<li><a href={$ROUTES.ADMIN.CUSTOMER.LIST}>Zákazníci</a></li>
-					<li><a href={$ROUTES.ADMIN.ORDER.LIST}>Objednávky</a></li>
-					<li><a href={$ROUTES.ADMIN.MENU.LIST}>Menu</a></li>
-					<li><a href="/admin/text">Texty</a></li>
+					class=" menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+					<li><a class="text-sm" href="/">Klientská část</a></li>
+					<hr class="border-gray-300 px-2 mt-2 mb-4" />
+					<li><a class="text-sm" href={$ROUTES.ADMIN.BASE}>Nástěnka</a></li>
+					<li><a class="text-sm" href="/admin/customer">Zákazníci</a></li>
+					<li><a class="text-sm" href="/admin/order">Objednávky</a></li>
+					<li><a class="text-sm" href="/admin/menu">Menu</a></li>
+					<li><a class="text-sm" href="/admin/text">Texty</a></li>
 				</ul>
 			</div>
 			<p class="text-xl">Malý LEO</p>
 		</div>
 		<div class="navbar-center">
-			<div class="flex justify-center w-1/3 m-5 text-md xl:text-lg">
+			<div class="flex justify-center w-1/4 m-5 text-md xl:text-lg">
 				{#if $page.data.session}
 					{#await getProfile()}
 						<p>...</p>
 					{:then profile}
 						{#if profile}
-							<p>Vítej, {profile.username}!</p>
+							<p>Vítej, {profile.first_name}!</p>
 							<span class="pr-2">&nbsp;</span><Icon src={FaceSmile} size="26" />
 						{:else}
 							<p>Profil nenalezen.</p>
@@ -145,45 +149,51 @@
 				<time class="">{formatterTime.format($currentDate)}</time>
 			</div>
 		</div>
-		<div class="navbar-end pr-3">
+		<div class="navbar-end">
 			{#if $page.data.session}
 				<div class="hidden md:block">
 					<div class="dropdown dropdown-end">
 						<div
 							tabindex="0"
 							role="button"
-							class="btn btn-ghost btn-circle avatar">
+							class="btn btn-ghost btn-circle avatar hover:tooltip hover:tooltip-open hover:tooltip-left" data-tip="Nastavení">
 							<div class="w-10 rounded-full">
 								<img alt="Profile img" src="/spock-icon.jpg" />
 							</div>
 						</div>
-						<!-- svelte-ignore a11y-no-noninteractive-tabindex -->
 						<ul
 							tabindex="0"
 							class="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
-							<li>
-								<a href="/admin/settings" class="justify-between">
-									Nastavení účtu
-									<span class="badge">Nový</span>
+							<li class="">
+								<!-- svelte-ignore a11y-missing-attribute -->
+								<a href="/admin/settings" class="justify-between py-2 text-sm">
+									Účet
 								</a>
 							</li>
-							<li><a on:click={signOut} disabled={loading}>Odhlásit se</a></li>
+							<li>
+								<a href="/admin/site-setting" class="justify-between text-sm">
+									Nastavení									
+								</a>
+							</li>
+							<hr>
+							<li>
+								<a class="text-sm py-2" on:click={signOut} disabled={loading}
+									>Odhlásit se</a>
+							</li>
 						</ul>
 					</div>
 				</div>
 			{:else}
-				<button class="btn btn-outline mr-2"
-					><a
-						href="/admin/signin"
-						class=""
+				<button
+					><a href="/admin/signin" class="btn btn-outline mr-2 bg-cyan-600"
 						>Přihlásit</a
 					></button>
-				<button class="btn btn-outline"
+				<!--<button
 					><a
 						href="/admin/signup"
-						class=""
+						class="btn btn-outline"
 						>Registrovat</a
-					></button>
+					></button>-->
 			{/if}
 		</div>
 	</div>
